@@ -3,7 +3,7 @@
 Simple pedestrian crossing project created with an Arduino, C Programming Language, and a circuit on a breadboard. 
 
 ## Table of Contents
-* [Explanation](#explanation)
+* [Description](#description)
 * [Setup](#setup)
 * [Technologies](#technologies)
 

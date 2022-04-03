@@ -26,6 +26,28 @@ I wanted to recreate a pedestrian that wants to cross the street. For this proje
 
 ## Setup
 
+I have included a schematic in this repo, but the setup will be here as well. 
+
+### Arduino
+
+GND & 5V connected to breadboard
+
+Digital Pins (DP)
+- DP 12 -> LCD Pin 4 (Register Select)
+- DP 11 -> LCD Pin 6 (Enable)
+- DP 6 -> pushbutton
+- DP 5 -> LCD Pin 11
+- DP 4 -> LCD Pin 12
+- DP 3 -> LCD Pin 13
+- DP 2 -> LCD Pin 14
+
+Analog Pins
+- A0 -> Red Traffic Light LED
+- A1 -> Yellow Traffic Light LED
+- A2 -> Green Traffic Light LED
+- A3 -> Red Pedestrian Light LED
+- A4 -> Green Pedestrian Light LED
+
 ## Technologies
 
 Arduino IDE, C Programming Language

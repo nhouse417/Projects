@@ -13,6 +13,8 @@ I wanted to recreate a pedestrian that wants to cross the street. For this proje
 
 ## Setup
 
+### Parts
+
 ## Technologies
 
 

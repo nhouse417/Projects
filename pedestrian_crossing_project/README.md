@@ -14,15 +14,15 @@ I wanted to recreate a pedestrian that wants to cross the street. For this proje
 
 ## Parts
 
-1x Arduino UNO R3
-1x RBG 16x2 LCD (GWT C1627A by Adafruit)
-1x 10k potentiometer
-2x Breadboard
-2x Green LED
-2x Red LED
-1x Yellow LED
-6x 330ohms resistors
-1x Pushbutton
+- 1x Arduino UNO R3
+- 1x RBG 16x2 LCD (GWT C1627A by Adafruit)
+- 1x 10k potentiometer
+- 2x Breadboard
+- 2x Green LED
+- 2x Red LED
+- 1x Yellow LED
+- 6x 330ohms resistors
+- 1x Pushbutton
 
 ## Setup
 

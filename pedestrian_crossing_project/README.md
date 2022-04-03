@@ -4,11 +4,13 @@ Simple pedestrian crossing project created with an Arduino, C Programming Langua
 
 ## Table of Contents
 * [General Info] (#general-info)
-* [Technologies] (#technologies)
 * [Setup] (#setup)
+* [Technologies] (#technologies)
 
-## General Info
+# General Info
 
+# Setup
 
+# Technologies
 
 

@@ -7,10 +7,10 @@ Simple pedestrian crossing project created with an Arduino, C Programming Langua
 * [Setup] (#setup)
 * [Technologies] (#technologies)
 
-# General Info
+### General Info
 
-# Setup
+### Setup
 
-# Technologies
+### Technologies
 
 

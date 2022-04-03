@@ -48,6 +48,24 @@ Analog Pins
 - A3 -> Red Pedestrian Light LED
 - A4 -> Green Pedestrian Light LED
 
+### LCD Screen 
+
+- Pin 1 -> GND (Vss)
+- Pin 2 -> 5V (Vdd)
+- Pins 16-18 -> GND 
+- Pin 15 -> 5V
+
+### Pushbutton
+
+#### One side
+
+- 1 pin -> 5V
+- 1 pin -> GND with resistor before connecting GND
+
+#### On other side
+
+- 1 pin to DP6 on Arduino
+
 ## Technologies
 
 Arduino IDE, C Programming Language

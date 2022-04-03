@@ -13,7 +13,8 @@ Simple pedestrian crossing project created with an Arduino, C Programming Langua
 I wanted to recreate a pedestrian that wants to cross the street. For this project, the pedestrian that wants to cross the street presses a pushbutton to request to cross the street. The traffic light then changes from green to yellow to red, and there's a pedestrian light that will change from red to green. The LCD screen will change from "WAIT!" to "WALK!" and a countdown will begin for the pedestrian to cross the street. When the countdown is done, the traffic light will change from red to green, and the pedestrian light will change from green to red. Lastly, the LCD screen will cahnge from "WALK!" to "WAIT!". 
 
 ## Parts
-1 RBG 16x2 LCD
+1x RBG 16x2 LCD (GWT C1627A by Adafruit)
+
 
 ## Setup
 

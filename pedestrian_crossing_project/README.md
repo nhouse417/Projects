@@ -1,4 +1,4 @@
-# Pedestrian Crossing Simulation
+# Pedestrian Crossing Project
 
 Simple pedestrian crossing project created with an Arduino, C Programming Language, and a circuit on a breadboard. 
 

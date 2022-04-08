@@ -11,3 +11,7 @@ you to put more money into your balance.
 The code was designed for Linux systems, if you're on Windows you'll have to change "system("clear") to system("cls"). Both do the 
 same (clearing the console screen) but it's just different command names for different systems.
 
+### Technologies
+
+Created this game using C++ and the random numbers library cstdlib. 
+

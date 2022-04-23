@@ -18,7 +18,7 @@ project is written in Python except for the Arduino code which was written in C.
 
 The project flow is as follows:
 
-1. Run facial_req.py in the RaspberryPi terminal.
+1. Run facial_req.py in the RaspberryPi terminal by running the command "python3 facial_req.py". 
 2. The webcam is started up and a window shows what the camera sees.
 3. If there is a face in view of the webcam, the program will determine if the face is in the dataset.
 4. If the face is in the dataset, the window will display the person's name (i.e. Noah).
@@ -33,8 +33,20 @@ The project flow is as follows:
 
 - RaspberryPi 3b+ with Raspian OS 32-bit
 - Arduino UNO R3
-- 
+- 1x Green LED
+- 1x Red LED
+- 1x LCD Screen (Adafruit RBG backlight positive 16x2)
+- potentiometer for the LCD screen
+- Logitech C270 HD webcam
+- Male-to-Male wires
+- Female-to-Male wires
 
 ## Setup
+
+I have included a schematic of the setup in the project files. 
+
+To use the OpenCV library, you have to install the OpenCV library along with the imutils library. The imutils library is a series
+of convenience functions that help OpenCV computing on the RaspberryPi. You can visit this [link](https://pimylifeup.com/raspberry-pi-opencv/)
+for a step-by-step guide on installing OpenCV on your pi. 
 
 ## Technologies

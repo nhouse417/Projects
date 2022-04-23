@@ -49,4 +49,14 @@ To use the OpenCV library, you have to install the OpenCV library along with the
 of convenience functions that help OpenCV computing on the RaspberryPi. You can visit this [link](https://pimylifeup.com/raspberry-pi-opencv/)
 for a step-by-step guide on installing OpenCV on your pi. 
 
+After installing OpenCV, it's time to train the model for facial recognition. First, create a folder that will hold all of these python files, 
+then create a folder called "dataset". This will hold the images for the person that will be recognized by the software. Inside of this dataset
+folder, create another folder with the person's name you want to be recognized. In my case, I created a folder named "Noah". After that is done,
+open the headshots.py file in Geany (the IDE I used on the RaspberryPi). Now, you want to run that file in the terminal using the command "python3 headshots.py". This will start the webcam and ask you to take pictures of yourself which you can do by pressing the space bar. This will take your
+pictures and put them into the dataset folder named after the person you want. After that is done, it's time to train the model which you can do by
+running the command "python3 train_model.py". This file will create an encodings file called "encodings.pickle" which holds the criteria needed for 
+identifying faces. 
+
+After training the model, you can now run the facial recognition with the command "python3 facial_req.py" in the RaspberryPi terminal. 
+
 ## Technologies

@@ -59,4 +59,12 @@ identifying faces.
 
 After training the model, you can now run the facial recognition with the command "python3 facial_req.py" in the RaspberryPi terminal. 
 
+This is a very popular project so I wanted to do more with it than facial recognition. So I added two LEDs, a green LED for successful facial recognition and a red LED for failure. This was simple, I used two GPIO pins which were numbered 4 and 27. This [link](https://www.etechnophiles.com/raspberry-pi-3-b-pinout-with-gpio-functions-schematic-and-specs-in-detail/#raspberry-pi-3b-pinout-with-gpio-function) shows the GPIO layout of the RaspberryPi 3b+. Then I initialized these pins to output which can be seen in the facial_req.py file. Then I used two female-to-male wires and connected them to their respective LEDs.
+
+Also I added an LCD screen so that user can see more output from the program. One problem I had was that since the program would run until the user pressed the "q" key, the window showing what the camera sees would freeze and stop showing what the camera sees. This is why I added the LCD screen so that the user can see if the facial recognition was still working. At first, I tried sending a signal from the Pi to the Arduino but connecting a GPIO pin to an Arduino pin. However this didn't work because before even starting the program the LCD would display "Face Detection Successful". This led me to believe that the Arduino pin was receiving a high signal (using a digital pin) even though the program wasn't running. 
+
+This led me to use USB Serial Communication between the Pi and Arduino. In facial_req.py, I initialized the port by getting the name of the Arduino using the command "ls dev/tty*" while the Arduino was connected to the Pi. The name of my Arduino was "/dev/ttyACM0". After that I setup the port for communication by using the serial.Serial() function which can be seen in facial_req.py file. On the Arduino side, I opened the serial port on the 9600 baud rate which is the same that I used on the Pi. Then I checked if there was data in the Arduino's serial port. The Pi would send either "success" or "failure" and the Arduino would check for either of those two. If it was "success" the LCD screen displayed "Face Detection Successful", if it was "failure" then it would display "Unknown Face". 
+
 ## Technologies
+
+Raspberry Pi 3b+ with Raspian OS 32-bit, Python, Geany IDE, Arduino UNO R3, Arduino IDE, USB Serial Communication. 

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 app = Flask(__name__)
 
 data = {
@@ -69,18 +69,21 @@ def recipeReturn():
     newName = request.form['name']  # check if name is in dictionary already
     for i in range(len(data['recipes'])):
       if data['recipes'][i].get('name') == newName:
-        return jsonify({"error": "Recipe already exists"})
+        return Response("{'error': 'Recipe already exists'}", status=400)
     newIngredients = request.form['ingredients']
     newInstructions = request.form['instructions']
     newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
     data['recipes'].append(newRecipe)
-    
-  recipes = data['recipes']
-  for i in range(len(recipes)):
-    name = recipes[i].get('name')
-    recipeNames.append(name)
-  result = {'recipeNames' : recipeNames}
-  return jsonify(result)
+    recipeNames.append(newName)
+    return Response(status=201)
+  
+  if request.method == 'GET':
+    recipes = data['recipes']
+    for i in range(len(recipes)):
+      name = recipes[i].get('name')
+      recipeNames.append(name)
+    result = {'recipeNames' : recipeNames}
+    return jsonify(result)
 
 # Part 2: /recipes/details/garlicPasta (string parameter)
 @app.route('/recipes/details/<string:recipe>')

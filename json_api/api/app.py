@@ -74,16 +74,13 @@ def recipeReturn():
     newInstructions = request.form['instructions']
     newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
     data['recipes'].append(newRecipe)
-    recipeNames.append(newRecipe["name"])
-    return jsonify(recipeNames)
-
-  if request.method == 'GET':
-    recipes = data['recipes']
-    for i in range(len(recipes)):
-      name = recipes[i].get('name')
-      recipeNames.append(name)
-    result = {'recipeNames' : recipeNames}
-    return jsonify(result)
+    
+  recipes = data['recipes']
+  for i in range(len(recipes)):
+    name = recipes[i].get('name')
+    recipeNames.append(name)
+  result = {'recipeNames' : recipeNames}
+  return jsonify(result)
 
 # Part 2: /recipes/details/garlicPasta (string parameter)
 @app.route('/recipes/details/<string:recipe>')

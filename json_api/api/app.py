@@ -74,7 +74,8 @@ def recipeReturn():
     newInstructions = request.form['instructions']
     newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
     data['recipes'].append(newRecipe)
-    return jsonify({})
+    recipeNames.append(newRecipe["name"])
+    return jsonify(recipeNames)
 
   if request.method == 'GET':
     recipes = data['recipes']

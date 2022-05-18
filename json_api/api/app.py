@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, make_response
 app = Flask(__name__)
 
 data = {
@@ -63,49 +63,43 @@ def welcome():
 @app.route('/recipes', methods=['GET', 'POST'])
 def recipeReturn():
 
-  recipeNames = []
-
   if request.method == 'POST':
     newName = request.form['name']  # check if name is in dictionary already
     for i in range(len(data['recipes'])):
       if data['recipes'][i].get('name') == newName:
-        return Response("{'error': 'Recipe already exists'}", status=400)
+        result = jsonify({'error': 'Recipe already exists'})
+        return make_response(result, 400)
+
     newIngredients = request.form['ingredients']
     newInstructions = request.form['instructions']
     newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
     data['recipes'].append(newRecipe)
-    recipeNames.append(newName)
     return Response(status=201)
   
   if request.method == 'GET':
+    recipeNames = []
     recipes = data['recipes']
     for i in range(len(recipes)):
       name = recipes[i].get('name')
       recipeNames.append(name)
-    result = {'recipeNames' : recipeNames}
-    return jsonify(result)
+    result = jsonify({'recipeNames' : recipeNames})
+    return make_response(result, 200)
 
 # Part 2: /recipes/details/garlicPasta (string parameter)
-@app.route('/recipes/details/<string:recipe>')
-def recipeDetails(recipe):
-  counter = 0
-  ingredientsList = []
-  numSteps = 0
-  recipes = data["recipes"]
+@app.route('/recipes/details/<string:recipeName>')
+def recipeDetails(recipeName):
 
   for i in range(len(recipes)):
-    if(recipes[i].get('name') != recipe):
-      counter += 1
-    elif(recipes[i].get('name') == recipe):
+    recipes = data["recipes"]
+    if recipes[i].get('name') == recipeName:
       ingredientsList = recipes[i].get('ingredients')
       numSteps = len(recipes[i].get('instructions'))
-      break
-      
-  if(counter == len(recipes)):
-    return jsonify({})
+      result = jsonify({'details': {'ingredients': ingredientsList, 'numSteps': numSteps}})
+      return make_response(result, 200)
 
-  result = {'details': {'ingredients': ingredientsList, 'numSteps': numSteps}}
-  return jsonify(result)
+  emptyList = jsonify({})
+  return make_response(emptyList, 200)
+
 
 
   

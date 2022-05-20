@@ -60,7 +60,7 @@ def welcome():
 
 # Part 1 "/recipes"
 # Part 3: POST
-@app.route('/recipes', methods=['GET', 'POST'])
+@app.route('/recipes', methods=['GET', 'POST', 'PUT'])
 def recipeReturn():
 
   if request.method == 'POST':
@@ -70,11 +70,12 @@ def recipeReturn():
         result = jsonify({'error': 'Recipe already exists'})
         return make_response(result, 400)
 
-    newIngredients = request.form['ingredients']
-    newInstructions = request.form['instructions']
+    newIngredients = request.form.getlist('ingredients')
+    newInstructions = request.form.getlist('instructions')
     newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
     data['recipes'].append(newRecipe)
-    return Response(status=201)
+    result = jsonify({})
+    return make_response(result, 201)
   
   if request.method == 'GET':
     recipeNames = []
@@ -85,17 +86,30 @@ def recipeReturn():
     result = jsonify({'recipeNames' : recipeNames})
     return make_response(result, 200)
 
+  if request.method == 'PUT':
+    recipeName = request.form['name']  # check if recipe exists in dictionary
+    for i in range(len(data['recipes'])):
+      if recipeName == data['recipes'][i].get('name'):
+        updatedIngredients = request.form.getlist('ingredients')
+        updatedInstructions = request.form.getlist('instructions')
+        updatedRecipe = {"name": recipeName, "ingredients": updatedIngredients, "instructions": updatedInstructions}
+        data['recipes'][i] = updatedRecipe
+        result = jsonify({"success": "Recipe updated"})
+        return make_response(result, 204)
+
+    result = jsonify({"error": "Recipe doesn't exist"})
+    return make_response(result, 404)
+    
 # Part 2: /recipes/details/garlicPasta (string parameter)
 @app.route('/recipes/details/<string:recipeName>')
 def recipeDetails(recipeName):
-
+  recipes = data['recipes']
   for i in range(len(recipes)):
-    recipes = data["recipes"]
     if recipes[i].get('name') == recipeName:
       ingredientsList = recipes[i].get('ingredients')
       numSteps = len(recipes[i].get('instructions'))
       result = jsonify({'details': {'ingredients': ingredientsList, 'numSteps': numSteps}})
       return make_response(result, 200)
 
-  emptyList = jsonify({})
-  return make_response(emptyList, 200)
+  result = jsonify({})
+  return make_response(result, 200)

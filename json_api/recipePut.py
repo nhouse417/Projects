@@ -2,10 +2,10 @@ import requests
 
 url = "http://127.0.0.1:5000/recipes"
 newRecipe = {
-  "name" : "butterBagel",
+  "name" : "butteredBagel",
   "ingredients" : [
     "1 bagel",
-    "butter"
+    "2 tbsp butter"
   ],
   "instructions" : [
     "cut the bagel",
@@ -13,6 +13,7 @@ newRecipe = {
   ]
 }
 
-requests.post(url, data=newRecipe)
+resp = requests.put(url, data=newRecipe)
 
-
+resp1 = requests.get(url)
+print(resp1.json())

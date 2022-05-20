@@ -56,7 +56,7 @@ data = {
 
 @app.route('/')
 def welcome():
-  return "Welcome to Practice"
+  return "Welcome to my simple JSON API where it keeps data about food recipes"
 
 # Part 1 "/recipes"
 # Part 3: POST
@@ -72,7 +72,7 @@ def recipeReturn():
 
     newIngredients = request.form.getlist('ingredients')
     newInstructions = request.form.getlist('instructions')
-    newRecipe = {"name": newName, "ingredients": newIngredients, "instructions": newInstructions}
+    newRecipe = {'name': newName, 'ingredients': newIngredients, 'instructions': newInstructions}
     data['recipes'].append(newRecipe)
     result = jsonify({})
     return make_response(result, 201)
@@ -92,12 +92,12 @@ def recipeReturn():
       if recipeName == data['recipes'][i].get('name'):
         updatedIngredients = request.form.getlist('ingredients')
         updatedInstructions = request.form.getlist('instructions')
-        updatedRecipe = {"name": recipeName, "ingredients": updatedIngredients, "instructions": updatedInstructions}
+        updatedRecipe = {'name': recipeName, 'ingredients': updatedIngredients, 'instructions': updatedInstructions}
         data['recipes'][i] = updatedRecipe
-        result = jsonify({"success": "Recipe updated"})
+        result = jsonify({'success': 'Recipe updated'})
         return make_response(result, 204)
 
-    result = jsonify({"error": "Recipe doesn't exist"})
+    result = jsonify({'error': "Recipe doesn't exist"})
     return make_response(result, 404)
     
 # Part 2: /recipes/details/garlicPasta (string parameter)

@@ -24,4 +24,8 @@ Also, if you followed the video, I was using the server in a virtual environment
 
 ## How to Use
 
-First, I opened two terminals, one for the server, and one for the client. On the client side, the current working directory should contain the scripts that you want to run. And to run these scripts, type "python3 <script_name.py>" on the command line. For the server, type "python3 \__main__.py" which will start up the server. __NOTE__: The last command has two underscores for the main.py file. 
+First, I opened two terminals, one for the server, and one for the client. On the client side, the current working directory should contain the scripts that you want to run. And to run these scripts, type "python3 <script_name.py>" on the command line. For the server, type "python3 \__main__.py" which will start up the server. __NOTE__: The last command has two underscores for the main.py file. The server will give updates on status codes and which method was run on the server such as: GET, POST, PUT.
+
+## Technologies
+
+For this, I used Visual Studio Code by Microsoft, Python3, Flask library, and other Python libraries such as requests, make_responses, request, and jsonify to return JSON formatted data to the server.

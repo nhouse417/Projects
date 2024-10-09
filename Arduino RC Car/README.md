@@ -16,16 +16,16 @@ Remote controlled car using two Arduinos. One for the transmitter which is the c
 
 ## Parts
 
-2x Arduino Uno R3
-1x L298N DC Motor Driver Module
-2x nRF24L01 Wireless RF Module
-1x Analog Joystick Module or Arduino PS2 Joystick
-1x 2WD Smart Robot Chassis Kit from Amazon
-2x 9V battery holder
-2x 9V batteries (I used Duracell 9V 580mAh batteries)
-1x Arduino power supply for transmitter (9VDC 1A Arduino compatible power supply)
-Male-to-Male jumper wires
-Female-to-Male jumper wires
+- 2x Arduino Uno R3
+- 1x L298N DC Motor Driver Module
+- 2x nRF24L01 Wireless RF Module
+- 1x Analog Joystick Module or Arduino PS2 Joystick
+- 1x 2WD Smart Robot Chassis Kit from Amazon
+- 2x 9V battery holder
+- 2x 9V batteries (I used Duracell 9V 580mAh batteries)
+- 1x Arduino power supply for transmitter (9VDC 1A Arduino compatible power supply)
+- Male-to-Male jumper wires
+- Female-to-Male jumper wires
 
 ## Setup
 

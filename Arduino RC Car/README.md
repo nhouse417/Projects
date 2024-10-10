@@ -9,6 +9,7 @@ RC car using two Arduinos (transmitter and receiver) communicating with each oth
 * [Code Explanation](#codeexplanation)
 * [Technologies](#technologies)
 * [Improvements](#improvements)
+* [Resources](#resources)
 
 ## Description
 
@@ -83,6 +84,15 @@ This Arduino is powered by a 9VDC 1A power supply.
 - VRy -> A0
 
 ## Code Explanation
+
+It's important that when you're connecting the nRF transmitters, that the pipe/address that they're listening to have the same value. In the transmitter and receiver code, the pipe has the same value.
+
+### Transmitter
+  The code is fairly straightforward, but make sure that when you instantiate the radio class to assign the CSN pin to pin 10 on the Arduino. This is because for the RF communication to work, CSN must be connected to the CSN pin of the Arduino. You could assign it to a different pin but you would still need to activate pin 10 by making it an "OUTPUT". The rest of the code is populating the "sentData" array with the inputs from the analog joystick and sending that array over RF. An improvement would be creating a struct that contains data members for the analog joystick values and sending that struct over RF.
+
+### Receiver
+  To start with the assigning of pins, I assigned ENA and ENB from the L298n module to pins 6 and 5 because those two pins generate a PWM frequency of 980Hz. This allows the vehicle to respond quickly to inputs from the analog joystick. Also when I had these pins assigned to non-PWM Arduino pins, the motor never got the instructions and there would be a constant buzzing sound.
+  Next in the loop, I always want to check if the radio is available (if RF is available) to see if communication is available. After obtaining the transmitter's values, I map the y-value (0-1023) from -255 to 255 to determine the speed and which direction the car should move. For the equation that calculates the motor speed left and right, I got that from the youtube video I used for this project. But this equation is used so that both motors dont spin at the same speed resulting in easier control of the car. The youtube video will be linked in the resources section. Then I want to constrain the left and right motor speed values to be within the range the motor can take. Lastly, this part "motorSpeedLeft = -motorSpeedLeft" and "motorSpeedRight = -motorSpeedRight" is used for backwards movement of the car.
 
 ## Technologies
 

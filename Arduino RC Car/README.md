@@ -38,12 +38,12 @@ Schematics will be included in this repository, but it'll be explained here as w
 - Positive terminal -> Arduino Vin
 - GND -> Arduino GND
 
-#### 9V battery for L298n module
+#### 9V battery for L298N module
 - Positive terminal -> 12V input
-- GND -> L298n GND
+- GND -> L298N GND
 
 #### Arduino 
-- GND -> GND of L298n module
+- GND -> GND of L298N module
 - GND -> GND of nRF24L01 module
 - 3.3V -> VCC of nRF24L01 module
 - Pin 9 -> CE pin of nRF24L01 module
@@ -51,19 +51,19 @@ Schematics will be included in this repository, but it'll be explained here as w
 - Pin 11 -> MOSI pin of nRF24L01 module
 - Pin 12 -> MISO pin of nRF24L01 module
 - Pin 13 -> SCK pin of nRF24L01 module
-- Pin 8 -> IN1 of L298n module
-- Pin 7 -> IN2 of L298n module
-- Pin 3 -> IN3 of L298n module
-- Pin 2 -> IN4 of L298n module
-- Pin 6 -> ENA of L298n module
-- Pin 5 -> ENB of L298n module
+- Pin 8 -> IN1 of L298N module
+- Pin 7 -> IN2 of L298N module
+- Pin 3 -> IN3 of L298N module
+- Pin 2 -> IN4 of L298N module
+- Pin 6 -> ENA of L298N module
+- Pin 5 -> ENB of L298N module
 
 #### Motor
 - red and black wires were included in the RC chassis kit
-- Right side motor (red) -> OUT1 of L298n module
-- Right side motor (black) -> OUT2 of L298n module
-- Left side motor (red) -> OUT3 of L298n module
-- Left side motor (black) -> OUT4 of L298n module
+- Right side motor (red) -> OUT1 of L298N module
+- Right side motor (black) -> OUT2 of L298N module
+- Left side motor (red) -> OUT3 of L298N module
+- Left side motor (black) -> OUT4 of L298N module
 
 ### Transmitter w/ second Arduino
 This Arduino is powered by a 9VDC 1A power supply.
@@ -91,7 +91,7 @@ It's important that when you're connecting the nRF transmitters, that the pipe/a
   The code is fairly straightforward, but make sure that when you instantiate the radio class to assign the CSN pin to pin 10 on the Arduino. This is because for the RF communication to work, CSN must be connected to the CSN pin of the Arduino. You could assign it to a different pin but you would still need to activate pin 10 by making it an "OUTPUT". The rest of the code is populating the "sentData" array with the inputs from the analog joystick and sending that array over RF. An improvement would be creating a struct that contains data members for the analog joystick values and sending that struct over RF.
 
 ### Receiver
-  To start with the assigning of pins, I assigned ENA and ENB from the L298n module to pins 6 and 5 because those two pins generate a PWM frequency of 980Hz. This allows the vehicle to respond quickly to inputs from the analog joystick. Also when I had these pins assigned to non-PWM Arduino pins, the motor never got the instructions and there would be a constant buzzing sound.
+  To start with the assigning of pins, I assigned ENA and ENB from the L298N module to pins 6 and 5 because those two pins generate a PWM frequency of 980Hz. This allows the vehicle to respond quickly to inputs from the analog joystick. Also when I had these pins assigned to non-PWM Arduino pins, the motor never got the instructions and there would be a constant buzzing sound.
   Next in the loop, I always want to check if the radio is available (if RF is available) to see if communication is available. After obtaining the transmitter's values, I map the y-value (0-1023) from -255 to 255 to determine the speed and which direction the car should move. For the equation that calculates the motor speed left and right, I got that from the youtube video I used for this project. But this equation is used so that both motors dont spin at the same speed resulting in easier control of the car. The youtube video will be linked in the resources section. Then I want to constrain the left and right motor speed values to be within the range the motor can take. Lastly, this part "motorSpeedLeft = -motorSpeedLeft" and "motorSpeedRight = -motorSpeedRight" is used for backwards movement of the car.
 
 ## Technologies
@@ -107,7 +107,7 @@ I enjoyed building this project and there are some improvements and upgrades tha
 
 - better chassis (more space, stronger material)
 - improved controller (have it's own power supply and two joysticks)
-- on/off switch (currently have to screw in power for L298n module, and plug in power for Arduino)
+- on/off switch (currently have to screw in power for L298N module, and plug in power for Arduino)
 - four wheels (only has 3 wheels right now)
 - better wiring (soldering)
 
@@ -115,7 +115,7 @@ I enjoyed building this project and there are some improvements and upgrades tha
 
 - This [youtube video](https://www.youtube.com/watch?v=eOqOiWJhFeA&themeRefresh=1) is what I used for the transmitter and receiver code but adjusted it to my project.
 - [A nRF24L01 demo](https://forum.arduino.cc/t/simple-nrf24l01-2-4ghz-transceiver-demo/405123) that I used to setup the nRF transmission between Arduinos.
-- [L298n connection to Arduino and motors](https://www.youtube.com/watch?v=E2sTbpFsvXI)
+- [L298N connection to Arduino and motors](https://www.youtube.com/watch?v=E2sTbpFsvXI)
 - [How to set up simple RF communication between nRF transmitters](https://iotprojectsideas.com/arduino-wireless-communication-using-nrf24l01-transceiver-module/)
 - [RF24 library](https://github.com/nRF24/RF24/blob/master/RF24.h)
 
@@ -123,6 +123,6 @@ I enjoyed building this project and there are some improvements and upgrades tha
 
 - [Arduino UNO R3](https://docs.arduino.cc/hardware/uno-rev3/)
 - [Arduino SPI](https://www.arduino.cc/reference/en/language/functions/communication/spi/)
-- [L298n Motor Driver Module](https://components101.com/modules/l293n-motor-driver-module)
+- [L298N Motor Driver Module](https://components101.com/modules/l293n-motor-driver-module)
 - [Analog Joystick Module](https://components101.com/modules/joystick-module)
 - [nRF24L01 Module](https://components101.com/wireless/nrf24l01-pinout-features-datasheet)

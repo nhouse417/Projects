@@ -96,4 +96,19 @@ It's important that when you're connecting the nRF transmitters, that the pipe/a
 
 ## Technologies
 
-## Improvements
+- Arduino built-in functions
+- C++
+- RF24 library on github
+- Electrical engineering concepts to ensure power is adequately supplied to all components
+
+## Improvements / Upgrades
+
+- better chassis (more space and stronger)
+- improved controller (have it's own power supply and two joysticks)
+- on/off switch (currently have to screw in power for L298n module)
+- four wheels
+- better wiring (soldering)
+- faster
+- more aerodynamic
+
+## Resources

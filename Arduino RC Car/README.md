@@ -103,12 +103,26 @@ It's important that when you're connecting the nRF transmitters, that the pipe/a
 
 ## Improvements / Upgrades
 
-- better chassis (more space and stronger)
+I enjoyed building this project and there are some improvements and upgrades that I want to bring to this project which are listed below.
+
+- better chassis (more space, stronger material)
 - improved controller (have it's own power supply and two joysticks)
-- on/off switch (currently have to screw in power for L298n module)
-- four wheels
+- on/off switch (currently have to screw in power for L298n module, and plug in power for Arduino)
+- four wheels (only has 3 wheels right now)
 - better wiring (soldering)
-- faster
-- more aerodynamic
 
 ## Resources
+
+- This [youtube video](https://www.youtube.com/watch?v=eOqOiWJhFeA&themeRefresh=1) is what I used for the transmitter and receiver code but adjusted it to my project.
+- [A nRF24L01 demo](https://forum.arduino.cc/t/simple-nrf24l01-2-4ghz-transceiver-demo/405123) that I used to setup the nRF transmission between Arduinos.
+- [L298n connection to Arduino and motors](https://www.youtube.com/watch?v=E2sTbpFsvXI)
+- [How to set up simple RF communication between nRF transmitters](https://iotprojectsideas.com/arduino-wireless-communication-using-nrf24l01-transceiver-module/)
+- [RF24 library](https://github.com/nRF24/RF24/blob/master/RF24.h)
+
+### Datasheets
+
+- [Arduino UNO R3](https://docs.arduino.cc/hardware/uno-rev3/)
+- [Arduino SPI](https://www.arduino.cc/reference/en/language/functions/communication/spi/)
+- [L298n Motor Driver Module](https://components101.com/modules/l293n-motor-driver-module)
+- [Analog Joystick Module](https://components101.com/modules/joystick-module)
+- [nRF24L01 Module](https://components101.com/wireless/nrf24l01-pinout-features-datasheet)

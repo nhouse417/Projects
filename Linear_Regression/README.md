@@ -35,9 +35,23 @@ I then used the isna() function in conjunction with sum() function to see if the
 
 ![image](https://github.com/user-attachments/assets/4050852b-0a78-42f1-a4db-85660f5d0cf3)
 
+After seeing that 207 total bedroom values were missing, I decided to drop those rows of data using the dropna() function. If I wanted to keep those rows of data, I could've used
+the fillna() function in conjunction with the mean() function. It would look like df.fillna(value=df['total_bedrooms'].mean(), inplace=True).
+
+After dealing with the missing values, I separate the features from the target into two dataframes. The target dataframe is the 'median_house_value' column because that's what
+I'm trying to predict (given all of the features, what would the median house value be?). 
 
 ### data visualization
-### why I chose to use pipelines
+
+To further understand the underlying data distribution, I first printed out the histograms of every feature (pictured below) to see each features' distribution. 
+It became clear that the features' values have a broad range, and it would be useful to normalize these values to a range so that linear regression can be 
+implemented effectively.
+
+![Figure_1](https://github.com/user-attachments/assets/3eaf2141-49cd-4b6f-83ae-057e7c0bb525)
+
+
+
+### Linear Regression implementation 
 ### outcomes and how it can be improved
 random forest vs linear regression
 

@@ -13,9 +13,21 @@ dataset for learning how to implement ML regression algorithms.
 - tools.py -> implemented functions compute_cost, compute_gradient, and gradient_descent that are needed for linear regression
   - this file is an ongoing file that will be used for my implementation of logistic regression in the future
  
-## Process (working title)
+## Implementation (working title)
 
-### pyenv
+### Background information
+
+If you stumbled upon this project and wanted to recreate it, here's some information on how to do so. I used a python virtual environment so that I can use the latest Python
+version and if there were package updates then I could easily update them without messing with my system's configuration. This isn't a tutorial on how to create and use 
+python virtual environments so I'll leave that up to you. The packages and versions I used are listed below.
+
+- Python 3.13
+- matplotlib 3.10.1
+- numpy 2.2.4
+- pandas 2.2.3
+- scikit_learn 1.6.1
+- seaborn 0.13.2
+
 ### preprocessing steps
 ### data visualization
 ### why I chose to use pipelines

@@ -13,7 +13,7 @@ dataset for learning how to implement ML regression algorithms.
 - tools.py -> implemented functions compute_cost, compute_gradient, and gradient_descent that are needed for linear regression
   - this file is an ongoing file that will be used for my implementation of logistic regression in the future
  
-## Implementation (working title)
+## Implementation
 
 ### Background information
 
@@ -28,7 +28,14 @@ python virtual environments so I'll leave that up to you. The packages and versi
 - scikit_learn 1.6.1
 - seaborn 0.13.2
 
-### preprocessing steps
+### Preprocessing steps
+
+After loading the data using the pandas read_csv() function, I familiarize myself with the data by printing the first 5 entries of the data using the pandas head() function. 
+I then used the isna() function in conjunction with sum() function to see if there were any missing values in the dataset (df.isna().sum(), pictured below).
+
+![image](https://github.com/user-attachments/assets/4050852b-0a78-42f1-a4db-85660f5d0cf3)
+
+
 ### data visualization
 ### why I chose to use pipelines
 ### outcomes and how it can be improved

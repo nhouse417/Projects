@@ -23,7 +23,6 @@ Steps
 6. calculate model accuracy
 """
 
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -31,7 +30,6 @@ import seaborn as sns
 from sklearn.metrics import mean_squared_error
 from tools import compute_gradient, gradient_descent, zscore_normalization
 
-sys.path.append('../ML_Projects')
 # load csv into a pandas dataframe
 data = pd.read_csv('housing.csv')
 

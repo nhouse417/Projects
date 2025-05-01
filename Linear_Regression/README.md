@@ -6,11 +6,11 @@ dataset for learning how to implement ML regression algorithms.
 
 ## File Descriptions
 
-- "linear_regression_v1.py" -> my implementation of linear regression 
-- linear_regression_sklearn.py -> linear regression implementation using pipelines
-- test.py -> used to test implementing pipelines using examples from the scikit-learn library
-- test_tools.py -> this tested the tools.py file functions to make sure they were working as intended
-- tools.py -> implemented functions compute_cost, compute_gradient, and gradient_descent that are needed for linear regression
+- **linear_regression_v1.py** -> my implementation of linear regression 
+- **linear_regression_sklearn.py** -> linear regression implementation using pipelines
+- **test.py** -> used to test implementing pipelines using examples from the scikit-learn library
+- **test_tools.py** -> this tested the tools.py file functions to make sure they were working as intended
+- **tools.py** -> implemented functions compute_cost, compute_gradient, and gradient_descent that are needed for linear regression
   - this file is an ongoing file that will be used for my implementation of logistic regression in the future
  
 ## Implementation

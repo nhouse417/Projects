@@ -79,7 +79,7 @@ course by Andrew Ng.
 ![squared_error_function_2](https://github.com/user-attachments/assets/a5780e3f-3c0c-470f-83a6-62c37555baf3)
 
 The **compute_gradient** function was implemented following the algorithm pictured below. The importance of this algorithm is to find the convergence of the w and b
-parameters so that the w and b parameters are the best to fit the model. 
+parameters so that the w and b parameters are the best to fit the model. As with the screenshots above, this was taken from the Coursera course.
 
 ![gradient_descent_algorithm](https://github.com/user-attachments/assets/aa087b2f-a0b5-4b70-96af-309db6121bc0)
 

@@ -64,14 +64,23 @@ than houses that aren't in high population density areas.
 ![Figure_3](https://github.com/user-attachments/assets/7b58f4cd-194d-4a93-bf2e-181018ab418e)
 
 
-### Linear Regression (my implementation)
+### Linear Regression (my implementation, linear_regression_v1.py)
 
 The main reason I implemented my own version of linear regression was to learn how it works behind the scenes. Implementing the cost function, the gradient function to get
 the best w and b parameters, and then the gradient function solidified my understanding of how the gradient function works and why it's important for linear regression.
 In the compute cost_function and compute_gradient function, regularization was implemented to prevent overfitting the data. This helps generalize the model so that it's 
 accurate when unseen data is added.
 
-The cost function (also known as the mean squared error) I implemented is pictured below. The goal of this function is to minimize the cost or error 
+The cost function (also known as the mean squared error) I implemented is pictured below. The goal of this function is to minimize the cost or error from the model. By
+minimizing this, it leads to a more accurate predictions from the model. These screenshots are from the Supervised Machine Learning: Regression and Classification Coursera
+course by Andrew Ng. 
+
+![squared_error_function_1](https://github.com/user-attachments/assets/db8d15a2-a9c8-4406-b424-ed8b32046f28)
+![squared_error_function_2](https://github.com/user-attachments/assets/a5780e3f-3c0c-470f-83a6-62c37555baf3)
+
+
+
+
 
 ### Linear Regression implemented using sklearn pipelines
 

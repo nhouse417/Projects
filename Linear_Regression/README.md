@@ -78,15 +78,31 @@ course by Andrew Ng.
 ![squared_error_function_1](https://github.com/user-attachments/assets/db8d15a2-a9c8-4406-b424-ed8b32046f28)
 ![squared_error_function_2](https://github.com/user-attachments/assets/a5780e3f-3c0c-470f-83a6-62c37555baf3)
 
-The **compute_gradient** function was implemented following the algorithm pictured below. The importance of this algorithm is to find the convergence of the w and b
-parameters so that the w and b parameters are the best to fit the model. As with the screenshots above, this was taken from the Coursera course.
+The **compute_gradient** function was implemented to find the best w and b parameters that fit the model. It does this by finding the derivative of the cost function 
+with respect to w and b. It uses the formula pictured below.
+
+![derivative_cost_function](https://github.com/user-attachments/assets/1e080fe1-9af4-42c4-9a86-9487ad8b8231)
+
+Then after finding the best w and b parameters that fit the model, those values are inputted to the **gradient_descent** function to fit the model. The algorithm was
+implemented following the gradient descent algorithm pictured below.
 
 ![gradient_descent_algorithm](https://github.com/user-attachments/assets/aa087b2f-a0b5-4b70-96af-309db6121bc0)
 
+All of these screenshots are from the Coursera course "Supervised Machine Learning: Regression and Classification" by Andrew Ng.
+
+After preprocessing the data, fitting the model, and running linear regression, the model's accuracy was 62% (rounded up to a whole number, real number was 0.6249).
+In the screenshot below, the cost is decreasing which is great and the predictions of our model and target values are shown. The mean squared error and root mean squared
+error are shown as well. 
+
+![Screenshot 2025-04-15 at 7 47 07 PM](https://github.com/user-attachments/assets/d30ffb74-a8b8-41a1-8cfc-4f9fcd4eb618)
 
 
+### Linear Regression implemented using sklearn pipelines (**linear_regression_sklearn.py**)
 
-### Linear Regression implemented using sklearn pipelines
+The reason for using sklearn pipelines were to familiarize myself with this popular library and how to use its functions to implement linear regression. I used pipelines
+because it provided a streamlined way to preprocess data and then run a machine learning algorithm.
+
+In this file, I included the "ocean_proximity" column to add 
 
 ### outcomes and how it can be improved
 random forest vs linear regression

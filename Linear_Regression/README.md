@@ -71,13 +71,17 @@ the best w and b parameters, and then the gradient function solidified my unders
 In the compute cost_function and compute_gradient function, regularization was implemented to prevent overfitting the data. This helps generalize the model so that it's 
 accurate when unseen data is added.
 
-The cost function (also known as the mean squared error) I implemented is pictured below. The goal of this function is to minimize the cost or error from the model. By
-minimizing this, it leads to a more accurate predictions from the model. These screenshots are from the Supervised Machine Learning: Regression and Classification Coursera
+The **cost function** (also known as the mean squared error) I implemented is pictured below. The goal of this function is to minimize the cost or error from the model. By
+minimizing this, it leads to more accurate predictions from the model. These screenshots are from the Supervised Machine Learning: Regression and Classification Coursera
 course by Andrew Ng. 
 
 ![squared_error_function_1](https://github.com/user-attachments/assets/db8d15a2-a9c8-4406-b424-ed8b32046f28)
 ![squared_error_function_2](https://github.com/user-attachments/assets/a5780e3f-3c0c-470f-83a6-62c37555baf3)
 
+The **compute_gradient** function was implemented following the algorithm pictured below. The importance of this algorithm is to find the convergence of the w and b
+parameters so that the w and b parameters are the best to fit the model. 
+
+![gradient_descent_algorithm](https://github.com/user-attachments/assets/aa087b2f-a0b5-4b70-96af-309db6121bc0)
 
 
 

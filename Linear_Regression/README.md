@@ -116,9 +116,29 @@ on the processed data. I then fitted the data and used the **score()** function 
 
 ![linear_regression_sklearn_output](https://github.com/user-attachments/assets/47f8e7e9-a9a3-47ac-852a-e81bff371ed3)
 
-### outcomes and how it can be improved
-random forest vs linear regression
+### Improvements for the future
 
-## Challenges / Problems
+The most important improvement that can be made is a more accurate model. One estimator that I've tried is the "RandomForestRegressor" which "fits a number of decision tree regressors on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting" (sklearn documentation). Instead of using the "LinearRegression" estimator, I used the RandomForestRegressor and it greatly improved the accuracy of the model. The RandomForestRegressor returned 82% accuracy compared to 65% for the LinearRegression
+model used.
 
-## Future 
+I'm going to learn more about the plethora of algorithms for regression models and will try to use different ones in the future. The almost 20% boost of accuracy from LinearRegression to
+the RandomForestRegressor has me excited to learn more. 
+
+Another improvement that can be made is creating a class for the tools that I used in my own implementation of linear regression and its functions. Creating a tools class would make it
+easier to call those tool functions from other files making it more portable. 
+
+The last improvement I can make is testing both **linear_regression_v1.py** and **linear_regression_sklearn.py** thoroughly by creating unit tests or by adding new data to see if the
+model can accurately predict the median house value. 
+
+## Challenges
+
+One of the challenges was implementing the **compute_cost** function, the costs values were too high. This can be seen in the screenshot above in the **Linear Regression (my implementation)** section. The first half of that screenshot shows the cost values decreasing but still too high. That was because I didn't normalize the target values which
+caused the cost values too be too high. In the second half of that screenshot, shows the cost values being within a range of -1 to 1 and it being decreased with every 10 iterations.
+This taught me that I had to normalize the features and targets to get values that could be understood. 
+
+Another challenge was that I encountered three runtime warnings in **linear_regression_sklearn.py**. The warnings were: (1) divide by zero encountered in matmul (2) overflow encountered
+in matmul (3) invalid value encountered in matmul. First, I checked my training and target values datasets to see if there were any NaN values. I discovered that there were some NaN values
+in the target dataset that I didn't clean before fitting it to the pipe. I'm still debugging on why I'm getting these warnings, but from my debugging I believe the problem is that when
+doing matrix multiplication the result is too big for a float. A reason that I think it's the matrix multiplication because I use the same dataset for my implementation of linear regression and I don't get those warnings. In my implementation, I use the dot product function from numpy, but the LinearRegression estimator uses matmul. 
+
+

@@ -100,9 +100,21 @@ error are shown as well.
 ### Linear Regression implemented using sklearn pipelines (**linear_regression_sklearn.py**)
 
 The reason for using sklearn pipelines were to familiarize myself with this popular library and how to use its functions to implement linear regression. I used pipelines
-because it provided a streamlined way to preprocess data and then run a machine learning algorithm.
+because it provided a streamlined way to preprocess data and then run a machine learning algorithm. Also pipelines provide a way to reuse code easily and ensure that 
+there aren't any data leaks when going from preprocessing to fitting the model. 
 
-In this file, I included the "ocean_proximity" column to add 
+In this file, I included the "ocean_proximity" column to add more precision to the model's predictions. Since this data is categorical and not numerical, I used the
+**OneHotEncoder** class to transform this categorical data into a numerical data array. For the numerical data, I used a pipeline of the **SimpleImputer** and 
+**StandardScaler** classes. SimpleImputer replaces any NaN values and I chose the method of 'median' which takes the median value of the column and replaces NaN values
+with that median value. StandardScaler performs standardization on the features by removing the mean and scaling to unit variance using the formula **z = (x - u) / s**
+which is also known as zscore normalization. In the formula, x is the training data, u (mu) is the mean of each column in an array, and s is the standard deviation of each
+column in an array. 
+
+Then I used **ColumnTransformer** to combine the preprocessing steps I did for the numerical data and categorical data. Lastly, I created a pipeline to run linear regression
+on the processed data. I then fitted the data and used the **score()** function to find how accurate this model was. In the picture below, the accuracy of this model was 
+65% (rounded up from 0.6488) which is a little better than my own implementation of linear regression. I had some runtime warnings that I'll address in the **Problems** section.
+
+![linear_regression_sklearn_output](https://github.com/user-attachments/assets/47f8e7e9-a9a3-47ac-852a-e81bff371ed3)
 
 ### outcomes and how it can be improved
 random forest vs linear regression

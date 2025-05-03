@@ -141,4 +141,10 @@ in matmul (3) invalid value encountered in matmul. First, I checked my training 
 in the target dataset that I didn't clean before fitting it to the pipe. I'm still debugging on why I'm getting these warnings, but from my debugging I believe the problem is that when
 doing matrix multiplication the result is too big for a float. A reason that I think it's the matrix multiplication because I use the same dataset for my implementation of linear regression and I don't get those warnings. In my implementation, I use the dot product function from numpy, but the LinearRegression estimator uses matmul. 
 
+## Resources
+
+[Scikit Learn Pipelines](https://daily.dev/blog/scikit-learn-pipelines-build-optimize-explain#:~:text=Scikit%2DLearn%20pipelines%20streamline%20machine%20learning%20workflows%20by%20combining%20data,transformations%20across%20training%20and%20testing)
+
+
+
 

@@ -5,10 +5,10 @@ scikit-learn along with learning how to use matplotlib and seaborn for data visu
 dataset for learning how to implement ML regression algorithms. 
 
 ## Table of Contents
-*[Background Information](#background-information)
-*[Preprocessing Steps](#preprocessing-steps)
-*[Data Visualization](#data-visualization)
-*[Linear Regression (my implementation)](#linear-regression (my-implementation, linear_regression_v1.py))
+* [Background Information](#background-information)
+* [Preprocessing Steps](#preprocessing-steps)
+* [Data Visualization](#data-visualization)
+* [Linear Regression (my implementation)](#linear-regression (my-implementation, linear_regression_v1.py))
 
 
 ## File Descriptions

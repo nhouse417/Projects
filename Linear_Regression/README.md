@@ -8,7 +8,7 @@ dataset for learning how to implement ML regression algorithms.
 * [Background Information](#background-information)
 * [Preprocessing Steps](#preprocessing-steps)
 * [Data Visualization](#data-visualization)
-* [Linear Regression (my implementation)](#linear-regression (my-implementation, linear_regression_v1.py))
+* [Linear Regression (my implementation)](#linear-regression-my-implementation-linear_regression_v1py)
 
 
 ## File Descriptions

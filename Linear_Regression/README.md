@@ -4,6 +4,13 @@ The goal of this project was to learn how to implement linear regression without
 scikit-learn along with learning how to use matplotlib and seaborn for data visualization and analysis. The California Housing dataset was used because it's a simple
 dataset for learning how to implement ML regression algorithms. 
 
+## Table of Contents
+*[File Descriptions](#filedescriptions)
+*[]()
+*[]()
+*[]()
+*[]()
+
 ## File Descriptions
 
 - **linear_regression_v1.py** -> my implementation of linear regression 

@@ -145,6 +145,14 @@ doing matrix multiplication the result is too big for a float. A reason that I t
 
 [Scikit Learn Pipelines](https://daily.dev/blog/scikit-learn-pipelines-build-optimize-explain#:~:text=Scikit%2DLearn%20pipelines%20streamline%20machine%20learning%20workflows%20by%20combining%20data,transformations%20across%20training%20and%20testing)
 
+[Linear Regression on California Housing Dataset](https://medium.com/@basumatary18/implementing-linear-regression-on-california-housing-dataset-378e14e421b7)
+
+[Linear Regression on California Housing Dataset](https://github.com/WanQi-K/DataSciencePortfolio/blob/main/California%20Housing%20Linear%20Regression/California_Housing_Linear_Regression_(More_Data).ipynb)
+
+[Sklearn California Housing Dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html)
+
+[Kaggle California Housing Dataset](https://www.kaggle.com/datasets/camnugent/california-housing-prices) - this is where I got **housing.csv** dataset from
+
 
 
 

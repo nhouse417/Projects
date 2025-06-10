@@ -1,0 +1,11 @@
+Metric	Value
+Accuracy	0.979
+Precision	0.978
+Recall	0.989
+F1 Score	0.983
+True Positives	87.000
+True Negatives	53.000
+False Positives	2.000
+False Negatives	1.000
+ROC AUC Score	0.976
+Mean Cross-Validation Score	0.951

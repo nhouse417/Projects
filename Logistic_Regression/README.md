@@ -73,6 +73,8 @@ Lastly, I created a csv file that has all the evaluation metric scores so that a
 ## Resources
 
 - [Accuracy vs. F1 Score](https://medium.com/analytics-vidhya/accuracy-vs-f1-score-6258237beca2)
+- [Wisconsin breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html)
+- [Confusion Matrix: How to Use it and Interpret Results](https://www.v7labs.com/blog/confusion-matrix-guide)
 
 
 

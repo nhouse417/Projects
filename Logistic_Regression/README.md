@@ -9,6 +9,7 @@ from scikit-learn using the load_breast_cancer() function.
 * [Background Information](background-information)
 * [Data Visualization](data-visualization)
 * [Implementation](implementation)
+* [Model Evaluation](model-evaluation)
 
 ### Background Information
 
@@ -23,7 +24,16 @@ For this project, I used a Python virtual environment so that I can install pack
 
 ### Data Visualization
 
-First, I wanted to look at the dataset's class distribution. For this, I created a bar graph that separated the cases labeled 0 (malignant) and 1 (benign). From the [dataset's documentation](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html), it shows that 212 cases are malignant and 357 cases are benign. This is shown in the picture below. 
+First, I wanted to look at the dataset's class distribution. For this, I created a bar graph that separated the cases labeled 0 (malignant) and 1 (benign). From the [dataset's documentation](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html), it shows that 212 cases are malignant and 357 cases are benign. This is shown in the picture below. The implementation for this is in the visualize_data() function.
 
 ![Class_Distribution](https://github.com/user-attachments/assets/2056094f-50ff-441b-aafd-2a4f5ea0437d)
+
+Next, I wanted to look at the features that had a strong correlation to the target classes. Since there are 30 features in this dataset, finding the features that are strongly correlated to the target classes is important to see which features have the most effect on the outcome. For this I used the corrwith() function to get each features' correlation value. Then using that I created a correlation matrix to show the top 10 features that have the strongest correlation to the classes (shown below). The implementation for this is in the feature_correlation() function.
+
+![Correlation_Matrix](https://github.com/user-attachments/assets/883a37cf-5d3c-41c6-812b-9ed02eb56c04)
+
+
+
+
+
 

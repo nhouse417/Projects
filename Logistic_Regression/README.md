@@ -32,6 +32,7 @@ Next, I wanted to look at the features that had a strong correlation to the targ
 
 ![Correlation_Matrix](https://github.com/user-attachments/assets/883a37cf-5d3c-41c6-812b-9ed02eb56c04)
 
+
 Shown below is how strongly correlated the top 10 features are to the target classes. This was implemented in the evaluate_model() function.
 
 ![Top_Features_Correlation_To_Target](https://github.com/user-attachments/assets/732a24e5-5b47-4853-9da6-76787937d81b)

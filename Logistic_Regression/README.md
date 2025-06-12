@@ -34,7 +34,6 @@ Next, I wanted to look at the features that had a strong correlation to the targ
 
 
 Shown below is how strongly correlated the top 10 features are to the target classes. This was implemented in the evaluate_model() function.
-
 ![Top_Features_Correlation_To_Target](https://github.com/user-attachments/assets/732a24e5-5b47-4853-9da6-76787937d81b)
 
 
@@ -61,6 +60,8 @@ This step is important because it shows how my model is performing with the data
 5. A confusion matrix is a table that summarizes the model's performance by comparing the predicted values to actual values. It shows if a model is correctly identifying true positive and negative cases (example is shown below).
 
 ![Confusion_Matrix](https://github.com/user-attachments/assets/5387faa7-19ec-40cd-93d5-42c00d8022a0)
+
+6. The ROC Curve shows the model's performance at all possible classifcation thresholds. It plots the true positive rate versus the false positive rate at different thresholds. This is important because
 
 
 

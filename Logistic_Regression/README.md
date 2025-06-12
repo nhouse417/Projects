@@ -32,6 +32,11 @@ Next, I wanted to look at the features that had a strong correlation to the targ
 
 ![Correlation_Matrix](https://github.com/user-attachments/assets/883a37cf-5d3c-41c6-812b-9ed02eb56c04)
 
+Shown below is how strongly correlated the top 10 features are to the target classes. This was implemented in the evaluate_model() function.
+
+![Top_Features_Correlation_To_Target](https://github.com/user-attachments/assets/732a24e5-5b47-4853-9da6-76787937d81b)
+
+
 ## Implementation
 
 This section is fairly straightforward but is broken down into different functions. The purpose of breaking the implementation into separate functions is for debugging purposes. For example, if something went wrong with training the model, then I go straight to that function instead of having to guess where something went wrong. The sequence of creating the binary classification model is as follows:
@@ -52,7 +57,10 @@ This step is important because it shows how my model is performing with the data
 2. Precision measures the model's accuracy of true positive cases meaning how well the model predicted a positive case without getting a false positive.
 3. Recall measures the model's ability to correctly identify all true positive cases. It tries to minimize the false negative cases which are actually positives.
 4. The f1 score is the harmonic mean between precision and accuracy which gives a better measurement of the model's incorrectly classified cases. This is also useful for imbalanced datasets because it uses both precision and recall to obtain a more balanced score of the model.
-5. A confusion matrix is a table that summarizes the model's performance by comparing the predicted values to actual values. It shows if a model is correctly identifying true positive and negative cases. 
+5. A confusion matrix is a table that summarizes the model's performance by comparing the predicted values to actual values. It shows if a model is correctly identifying true positive and negative cases (example is shown below).
+
+![Confusion_Matrix](https://github.com/user-attachments/assets/5387faa7-19ec-40cd-93d5-42c00d8022a0)
+
 
 
 

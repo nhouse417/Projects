@@ -10,6 +10,7 @@ from scikit-learn using the load_breast_cancer() function.
 * [Data Visualization](data-visualization)
 * [Implementation](implementation)
 * [Model Evaluation](model-evaluation)
+* [Resources](resources)
 
 ### Background Information
 
@@ -61,7 +62,18 @@ This step is important because it shows how my model is performing with the data
 
 ![Confusion_Matrix](https://github.com/user-attachments/assets/5387faa7-19ec-40cd-93d5-42c00d8022a0)
 
-6. The ROC Curve shows the model's performance at all possible classifcation thresholds. It plots the true positive rate versus the false positive rate at different thresholds. This is important because
+6. The ROC (Receiver Operating Characteristic) Curve shows the model's performance at all possible classifcation thresholds. It plots the true positive rate versus the false positive rate at different thresholds. This is important because it shows how the model is performing in classifying true positives to true negatives. Another useful metric is the ROC AUC (Area Under Curve) score which measures the area under the curve. It's useful because the value shows how well the model is performing. A higher AUC score means the model is performing well in distinguishing between classes. The ROC Curve for this model is shown below.
+
+![ROC_Curve](https://github.com/user-attachments/assets/246ea72e-a5a4-456f-8b99-899f540c268d)
+
+7. Cross validation is used to further evaluate the model. It splits the data into multiple subsets or folds, trains the model on some of the folds leaving one fold out for evaluation. Each fold is serves as the evaluation set once. The cross_val_score() function is used from scikit-learn, and this is implemented in the cross_validate_model() function. For each fold, the function outputs a score. Then I got the mean of all the scores to use as the cross validation score. The importance of this is to train the model on smaller subsets of data instead of one split of data.
+
+Lastly, I created a csv file that has all the evaluation metric scores so that anyone can see how the model performed.
+
+## Resources
+
+- [Accuracy vs. F1 Score](https://medium.com/analytics-vidhya/accuracy-vs-f1-score-6258237beca2)
+
 
 
 

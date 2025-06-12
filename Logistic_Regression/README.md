@@ -32,6 +32,28 @@ Next, I wanted to look at the features that had a strong correlation to the targ
 
 ![Correlation_Matrix](https://github.com/user-attachments/assets/883a37cf-5d3c-41c6-812b-9ed02eb56c04)
 
+## Implementation
+
+This section is fairly straightforward but is broken down into different functions. The purpose of breaking the implementation into separate functions is for debugging purposes. For example, if something went wrong with training the model, then I go straight to that function instead of having to guess where something went wrong. The sequence of creating the binary classification model is as follows:
+
+1. Preprocess the data using the StandardScaler() (function -> preprocess_data())
+2. Train the model using the LogisticRegression() classifier (function -> train_model())
+3. Evaluate the model (function -> evaluate_model())
+   a. This will be discussed in the next section
+4. Cross Validate the model (function -> cross_validate_model())
+5. Gather evaluation scores and output to a csv file (function -> evaluation_scores_file())
+   a. In the real world I would imagine that someone would like a summary of how the model performed.
+
+## Model Evaluation
+
+This step is important because it shows how my model is performing with the dataset. This is a binary classfication model so the evaluation metrics I chose are accuracy, precision, recall, f1 score, a confusion matrix, roc auc score, roc curve, cross validation score and mean cross validation score. The reasons why I chose these metrics are described in this section.
+
+1. Accuracy calculates the predicted values to the true values. This is useful to see how accurate the model's predictions are compared to the true values of the dataset.
+2. Precision measures the model's accuracy of true positive cases meaning how well the model predicted a positive case without getting a false positive.
+3. Recall measures the model's ability to correctly identify all true positive cases. It tries to minimize the false negative cases which are actually positives.
+4. The f1 score is the harmonic mean between precision and accuracy which gives a better measurement of the model's incorrectly classified cases. This is also useful for imbalanced datasets because it uses both precision and recall to obtain a more balanced score of the model.
+5. A confusion matrix is a table that summarizes the model's performance by comparing the predicted values to actual values. It shows if a model is correctly identifying true positive and negative cases. 
+
 
 
 

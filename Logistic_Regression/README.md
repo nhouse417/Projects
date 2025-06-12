@@ -6,11 +6,11 @@ from scikit-learn using the load_breast_cancer() function.
 
 ## Table of Contents
 
-* [Background Information](background-information)
-* [Data Visualization](data-visualization)
-* [Implementation](implementation)
-* [Model Evaluation](model-evaluation)
-* [Resources](resources)
+* [Background Information](#background-information)
+* [Data Visualization](#data-visualization)
+* [Implementation](#implementation)
+* [Model Evaluation](#model-evaluation)
+* [Resources](#resources)
 
 ### Background Information
 

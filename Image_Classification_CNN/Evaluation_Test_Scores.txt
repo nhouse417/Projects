@@ -1,0 +1,2 @@
+Test Loss	Test Accuracy
+5.570	98.380

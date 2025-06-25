@@ -52,11 +52,11 @@ Next, are the layers that do most of the work in this network which are the **Co
 
 <img width="926" alt="Screenshot 2025-06-25 at 4 21 49 PM" src="https://github.com/user-attachments/assets/00a4d4f7-b1f9-469a-bd2f-35b9a80912b1" />
 
-After the **Conv2D** layer, the **MaxPooling2d** layer takes the new convolved image then has it's own kernel that takes the maximum value within that kernel and then outputs that value to a new smaller image. An example is shown below. 
+After the **Conv2D** layer, the **MaxPooling2d** layer takes the new convolved image then has it's own kernel that takes the maximum value within that kernel and then outputs that value to a new smaller image. In the example below, the kernel size is 2x2.
 
 <img width="393" alt="MaxPooling2D" src="https://github.com/user-attachments/assets/9ea7be2a-74e1-4c9a-bad3-5803f3ddbc28" />
 
-
+You can experiment with the number of filters used in the **Conv2D** layers but I decided to go with powers of 2. The more filters you have the better the network will be able to detect complex patterns but it could lead to overfitting so experimentation is needed to find the sweet spot. Also the 'relu' activation function was used because it introduces non-linearity to the model which helps the model learn complex patterns. 
 
 
 

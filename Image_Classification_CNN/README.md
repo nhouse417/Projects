@@ -38,11 +38,20 @@ I created a Convolutional Neural Network (CNN) with 11 layers that include:
 - 3 MaxPooling2D layers
 - 2 Dense layers
 
+A picture of the model summary is shown below.
+<img width="762" alt="model_summary" src="https://github.com/user-attachments/assets/a5cd42a5-3398-47bd-a1f2-01f3f56339c3" />
+
+
 ### CNN architecture explained
 
 Next, I'll explain why I picked this architecture starting with the Rescaling layer. 
 
-But before explaining the Rescaling layer, there's an Input() layer before it which reshapes the input data to a 3D array. This is because a CNN is designed to process and analyze spatial relationships within data, specifically images. Because of this the input data is reshaped to (28, 28, 1) -> (width, height, channels). The images in the dataset are 28x28 pixels and are black and white hence why the 'channels' parameter is '1'. 
+But before explaining the Rescaling layer, there's an Input() layer before it which reshapes the input data to a 3D array. This is because a CNN is designed to process and analyze spatial relationships within data, specifically images. Because of this the input data is reshaped to (28, 28, 1) -> (row, columns, channels). The images in the dataset are 28x28 pixels and are black and white hence why the 'channels' parameter is '1' (if the images were in RGB, then the channels parameter would be 3). Then the Rescaling layer comes after. This layer is used to scale down the pixel values which range from 0 to 255 to a range of 0 to 1. It's important to scale down these values because computations can get large and might cause overflow.
+
+Next, are the layers that do most of the work in this network which are the Conv2D and MaxPooling2D layers. This isn't going to be a full breakdown of what these layers do. But to summarize, the Conv2D layer places a kernel of size, in this project I went with a 3x3 kernel size, over the image and it multiplies each pixel of the kernel with the value of the pixel lying beneath it, then you sum those numbers up and place that value in a new convolved image. This is important because it helps the neural network find what pixels are important to the image, and it breaks down the original image into a smaller one. An example is shown below from the book "Why Machines Learn" by Anil Ananthaswamy.
+
+<img width="926" alt="Screenshot 2025-06-25 at 4 21 49 PM" src="https://github.com/user-attachments/assets/00a4d4f7-b1f9-469a-bd2f-35b9a80912b1" />
+
 
 
 

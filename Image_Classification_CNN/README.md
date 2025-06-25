@@ -46,11 +46,16 @@ A picture of the model summary is shown below.
 
 Next, I'll explain why I picked this architecture starting with the Rescaling layer. 
 
-But before explaining the Rescaling layer, there's an Input() layer before it which reshapes the input data to a 3D array. This is because a CNN is designed to process and analyze spatial relationships within data, specifically images. Because of this the input data is reshaped to (28, 28, 1) -> (row, columns, channels). The images in the dataset are 28x28 pixels and are black and white hence why the 'channels' parameter is '1' (if the images were in RGB, then the channels parameter would be 3). Then the Rescaling layer comes after. This layer is used to scale down the pixel values which range from 0 to 255 to a range of 0 to 1. It's important to scale down these values because computations can get large and might cause overflow.
+But before explaining the **Rescaling** layer, there's an **Input** layer before it which reshapes the input data to a 3D array. This is because a CNN is designed to process and analyze spatial relationships within data, specifically images. Because of this the input data is reshaped to (28, 28, 1) -> (row, columns, channels). The images in the dataset are 28x28 pixels and are black and white hence why the 'channels' parameter is '1' (if the images were in RGB, then the channels parameter would be 3). Then the Rescaling layer comes after. This layer is used to scale down the pixel values which range from 0 to 255 to a range of 0 to 1. It's important to scale down these values because computations can get large and might cause overflow.
 
-Next, are the layers that do most of the work in this network which are the Conv2D and MaxPooling2D layers. This isn't going to be a full breakdown of what these layers do. But to summarize, the Conv2D layer places a kernel of size, in this project I went with a 3x3 kernel size, over the image and it multiplies each pixel of the kernel with the value of the pixel lying beneath it, then you sum those numbers up and place that value in a new convolved image. This is important because it helps the neural network find what pixels are important to the image, and it breaks down the original image into a smaller one. An example is shown below from the book "Why Machines Learn" by Anil Ananthaswamy.
+Next, are the layers that do most of the work in this network which are the **Conv2D** and **MaxPooling2D** layers. This isn't going to be a full breakdown of what these layers do. But to summarize, the Conv2D layer places a kernel of size, in this project I went with a 3x3 kernel size, over the image and it multiplies each pixel of the kernel with the value of the pixel lying beneath it, then you sum those numbers up and place that value in a new convolved image. This is important because it helps the neural network find what pixels are important to the image, and it breaks down the original image into a smaller one. An example is shown below from the book "Why Machines Learn" by Anil Ananthaswamy. 
 
 <img width="926" alt="Screenshot 2025-06-25 at 4 21 49 PM" src="https://github.com/user-attachments/assets/00a4d4f7-b1f9-469a-bd2f-35b9a80912b1" />
+
+After the **Conv2D** layer, the **MaxPooling2d** layer takes the new convolved image then has it's own kernel that takes the maximum value within that kernel and then outputs that value to a new smaller image. An example is shown below. 
+
+<img width="393" alt="MaxPooling2D" src="https://github.com/user-attachments/assets/9ea7be2a-74e1-4c9a-bad3-5803f3ddbc28" />
+
 
 
 

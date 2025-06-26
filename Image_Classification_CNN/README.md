@@ -82,10 +82,14 @@ And in this image below, you can see the model accuracy improvement throughout e
 
 ## Improvements
 
-One improvement that I want to make is to create a GUI which would take user input (i.e. the user drawing a number between 0 and 9) and then predict that number, and hopefully predict it correctly.
+One improvement that I want to make is to create a GUI which would take user input (i.e. the user drawing a number between 0 and 9) and then have the model predict that number, and hopefully predict it correctly.
 
 ## Resources 
 
+- [MNIST dataset on tensorflow](https://www.tensorflow.org/datasets/catalog/mnist)
+- [Why should we normalize pixel values or divide by 255](https://www.tensorflow.org/datasets/catalog/mnist)
+- [Dropout in Neural Networks](https://towardsdatascience.com/dropout-in-neural-networks-47a162d621d9/)
+- "Why Machines Learn" by Anil Ananthaswamy
 
 
 

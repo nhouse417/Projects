@@ -1,6 +1,6 @@
 # Convolutional Neural Network on MNIST dataset of handwritten digits
 
-The goal of this project is to create a deep learning neural network that's able to recognize handwritten digits with accuracy. 
+The goal of this project is to create a deep learning neural network that's able to recognize handwritten digits with high accuracy. 
 
 ## Table of Contents
 

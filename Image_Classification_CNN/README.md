@@ -58,7 +58,33 @@ After the **Conv2D** layer, the **MaxPooling2d** layer takes the new convolved i
 
 You can experiment with the number of filters used in the **Conv2D** layers but I decided to go with powers of 2. The more filters you have the better the network will be able to detect complex patterns but it could lead to overfitting so experimentation is needed to find the sweet spot. Also the 'relu' activation function was used because it introduces non-linearity to the model which helps the model learn complex patterns. 
 
+Next, a **Flatten** layer is used to change the output tensors from the **MaxPooling2D** layer into a linear sequence so that it can go into the Dense layers after that for image recognition. Also a **Dropout** layer is used right before the end to help the neural network generalize the data to prevent overfitting.
 
+Lastly, the output **Dense** layer has 10 units because we're trying to identify numbers between 0 and 9. And a softmax activation is used to create a probability distribution which helps the network make predictions easier.
+
+### Training and Evaluation methods
+
+These are self explanatory but I wanted to mention that in the **compile** method I used **categorical_crossentropy**.The reason I used this is because it creates a one-hot array containing the probable match for each category. Since the network is predicting a number between 0 and 9, an example output would look like [0, 1, 0, 0, 0, 0, 0, 0, 0, 0] which would mean that the digit 1 is predicted. 
+
+## Model Evaluation
+
+The two metrics from this model are accuracy and loss. This first figure below shows the accuracy improvement over every epoch for both the training and validation set. 
+
+![model_accuracy](https://github.com/user-attachments/assets/009fe45e-0a8b-4cc6-82e0-0aabc635fc39)
+
+Next, this image below shows the loss improvement over each epoch.
+
+![model_loss](https://github.com/user-attachments/assets/0ba23109-d956-46fa-8b32-cb4dc6bbc37f)
+
+And in this image below, you can see the model accuracy improvement throughout each epoch.
+
+<img width="646" alt="model_training" src="https://github.com/user-attachments/assets/d937f790-297c-4d84-bb0c-16597dd17990" />
+
+## Improvements
+
+One improvement that I want to make is to create a GUI which would take user input (i.e. the user drawing a number between 0 and 9) and then predict that number, and hopefully predict it correctly.
+
+## Resources 
 
 
 

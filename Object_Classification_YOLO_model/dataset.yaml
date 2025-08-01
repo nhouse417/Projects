@@ -1,0 +1,25 @@
+# MOT17Det YOLO configuration file
+
+# define train, validation, and dataset root paths
+train: dataset_for_yolo_model/MOT17-05/train
+
+val: dataset_for_yolo_model/MOT17-05/val
+
+# number of classes
+nc: 13
+
+# class names
+names:
+  0: Nothing
+  1: Pedestrian
+  2: Person on Vehicle
+  3: Car
+  4: Bicycle
+  5: Motorbike
+  6: Non motorized vehicle
+  7: Static person
+  8: Distractor
+  9: Occluder
+  10: Occluder on the ground
+  11: Occluder full
+  12: Reflection

@@ -98,8 +98,23 @@ After training the model, a folder is created containing performance metrics and
 
 ## Performance Metrics
 
+Evaluating the model's performance metrics is important to see how the model did and also where imrovements can be made. 
 
+First, in the terminal during model training, it should show the status of each epoch (example image shown below).
 
+<img width="854" height="42" alt="image" src="https://github.com/user-attachments/assets/09beaa58-2720-4591-ae9b-b01f2ed9463e" />
+
+There are some metrics shown here which are class, images, instances, Box(P, R, mAP50, mAP50-95). The explanation for these are documented [here](https://docs.ultralytics.com/guides/yolo-performance-metrics/#how-to-calculate-metrics-for-yolo11-model). 
+
+But I'll explain here as well:
+  - class -> name of the object class
+  - images -> tells you how many images in the validation set that contain the object class
+  - instances -> shows the count of how many times the class appears across all images in the validation set
+  - Box
+      - P (Precision) -> The accuracy of the detected objects, indicating how many detections were correct
+      - R (Recall) -> the ability of the model to identify all instances of objects in the images
+      - mAP50 -> Mean average precision calculated at an intersection over union (IoU) threshold of 0.50. It's a measure of the                       model's accuracy considering only the "easy" detections
+      - mAP50-95 -> The average of the mean average precision calculated at varying IoU thresholds, ranging from 0.50 to 0.95. It                        gives a comprehensive view of the model's performance across different levels of detection difficulty
 
 
 

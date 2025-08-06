@@ -7,7 +7,7 @@ The goal of this project is to detect pedestrians from other objects using a YOL
 * [Setup](#setup)
 * [Preprocess Data](#preprocess-data)
 * [Running the Model](#running-the-model)
-* [Metrics](#metrics)
+* [Performance Metrics](#performance-metrics)
 * [Improvements](#improvements)
 * [Problems](#problems)
 * [Resources](#resources)
@@ -68,15 +68,35 @@ As shown above in the introduction, the YOLO model needs a certain dataset forma
 
 **Another important file that the YOLO model needs is the .yaml file**. This is key for the model to know which directories are for training and validation, the number of classes, and the names of the classes for object detection. The creation of this .yaml file is seen in function **create_dataset_yaml_file**. 
 
+An example for a dataset is shown below.
+
+<img width="367" height="418" alt="image" src="https://github.com/user-attachments/assets/1555df97-d455-4cad-b562-c2d1b96e12d9" />
+
+
 ## Running the Model
 
 Now that the data is preprocessed and formatted correctly for the model. It's time to train the model. There are a lot of hyperparemeters that can be changed, but I decided to keep it simple for now since this is my first time using this model.
 
 ```python
 yolo_model = YOLO('yolo11m.pt')
-yolo_model.train(data='dataset.yaml', epochs=10, imgsz=640, device='mps')
+yolo_model.train(data=model.dataset_training_yaml_paths['MOT17-02'], epochs=10, imgsz=640, device='mps')
 ```
 
+- data -> contains the relative path for the dataset that you want to train
+- epochs -> how many times you want the model to run
+- imgsz -> the image size which needs to a multiple of 32 because that's the model's max stride
+  - for example, if you want to go through 1080 size pictures, the imgsz would need to 1088
+- device -> 'mps' because I'm running this model on an Apple silicon chip laptop
+
+Other common training parameters are 'batch' and 'save'. Batch refers to the batch size which refers to the number of training examples processed in one iteration before the model's weights are updated. There are three modes for batch but I used the default number which is 16. In another training run, I was processing 1080 images and there wasn't enough computer memory to support processing 16 images at once at that resolution so I changed the default batch value to 4.
+
+The runtime of training depends on how many epochs and how big of a model you're running (in the above example, I'm running a medium model) and also how large your dataset is. For me on average, it's taken around 8 hours for one training run of 10 epochs. I think I could significantly cut this time down if I chose a smaller YOLO model, but I wanted more object detection accuracy for when I run inference on a dataset the model hasn't seen.
+
+After training the model, a folder is created containing performance metrics and pictures, best weights, PyTorch models for best weight and last saved model, and example pictures of the model doing object detection on certain frames.
+
+<img width="262" height="556" alt="image" src="https://github.com/user-attachments/assets/e17133b2-3345-4673-a088-5ab303281469" />
+
+## Performance Metrics
 
 
 

@@ -125,6 +125,28 @@ A good thing that Ultralytics does is it outputs performance metrics for precisi
 
 <img width="2250" height="1500" alt="BoxPR_curve" src="https://github.com/user-attachments/assets/2b6d9981-76c7-4cc4-bd06-189f572e0073" />
 
+Shown below are the individual precision and recall performance metric images.
+
+<img width="2250" height="1500" alt="BoxP_curve" src="https://github.com/user-attachments/assets/0a7f6eee-7c72-461b-919e-00ec53c52860" />
+
+<img width="2250" height="1500" alt="BoxR_curve" src="https://github.com/user-attachments/assets/ad91f932-603b-4a23-9f69-053559069478" />
+
+Shown below is the F1 Score which is important because it provides a balanced measurement of a classification model's performance by considering both false positives and false negatives.
+
+<img width="2250" height="1500" alt="BoxF1_curve" src="https://github.com/user-attachments/assets/5d355eac-c7a9-4e27-bc05-ddba61435221" />
+
+Also another performance metric image is the results.jpg which shows the precision and recall curves but also the 'box_loss', 'cls_loss', 'dfl_loss' during training. 
+
+<img width="2400" height="1200" alt="results" src="https://github.com/user-attachments/assets/035da788-665a-422e-a488-c51ee660fbd9" />
+
+- box_loss -> refers to the component of the total loss function that quantifies the error in predicting the bounding box parameters               of detected objects. While traiing, we want to see this metric decrease as the model gets better at predicting                       bounding boxes in our images.
+
+- cls_loss -> refers to the component of the total loss function quantifies the error in predicting the correct class label for each               detected object. Just like the box_loss, we want to see this metric decrease as training goes on.
+
+- dfl_loss -> stands for distribution focal loss and it is a loss function designed to improve object detection accuracy by giving                 more weight to challenging instances making it easier for the model to learn.
+
+
+
 
 
 

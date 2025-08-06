@@ -57,6 +57,11 @@ In this function, I create a new folder called 'labels'. Then I implement a for 
 
 Then I create a new .txt file with the image number as the name. It's important that the labels files are exactly the same name as the image filename because the model finds the labels according to the image name.
 
+An example is shown below. 
+
+<img width="473" height="502" alt="image" src="https://github.com/user-attachments/assets/f2b878be-63cc-4ab7-a05e-66e04c49d74a" />
+
+
 ### Formatting the dataset to YOLO format
 
 As shown above in the introduction, the YOLO model needs a certain dataset format to work. In the **transfer_images_and_labels_for_model_training** function, I transfer the images and labels to a new directory called 'dataset_training' in the YOLO format. 

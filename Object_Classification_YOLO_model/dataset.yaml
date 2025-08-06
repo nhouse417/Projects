@@ -1,14 +1,6 @@
-# MOT17Det YOLO configuration file
-
-# define train, validation, and dataset root paths
-train: dataset_for_yolo_model/MOT17-05/train
-
-val: dataset_for_yolo_model/MOT17-05/val
-
-# number of classes
+train: train
+val: val
 nc: 13
-
-# class names
 names:
   0: Nothing
   1: Pedestrian

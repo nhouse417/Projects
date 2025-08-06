@@ -6,7 +6,7 @@ The model is tested and trained on MOT16 dataset which is already annotated.
 # Standard Library imports
 import configparser
 from pathlib import Path
-
+import shutil
 
 # Third Party imports
 import cv2
@@ -23,13 +23,43 @@ class PedestrianDetection:
     """
 
     def __init__(self):
-        pass
+        """
+        Holds the CLASS_MAP for the dataset yaml files.
+        Also contained a dict of (dataset_training : .yaml relative file paths) for training later
+        """
+        self.class_map = {
+            0: 'Nothing',
+            1: 'Pedestrian',
+            2: 'Person on Vehicle',
+            3: 'Car',
+            4: 'Bicycle',
+            5: 'Motorbike',
+            6: 'Non motorized vehicle',
+            7: 'Static person',
+            8: 'Distractor',
+            9: 'Occluder',
+            10: 'Occluder on the ground',
+            11: 'Occluder full',
+            12: 'Reflection'
+        }
+
+        self.class_map_len = len(self.class_map)
+
+        self.dataset_training_yaml_paths = {
+            'MOT17-02' : 'dataset_training/MOT17-02/dataset.yaml',
+            'MOT17-04' : 'dataset_training/MOT17-04/dataset.yaml',
+            'MOT17-05' : 'dataset_training/MOT17-05/dataset.yaml',
+            'MOT17-09' : 'dataset_training/MOT17-09/dataset.yaml',
+            'MOT17-10' : 'dataset_training/MOT17-10/dataset.yaml',
+            'MOT17-11' : 'dataset_training/MOT17-11/dataset.yaml',
+            'MOT17-13' : 'dataset_training/MOT17-13/dataset.yaml'
+        }
 
 
     def normalize_gt(self, filepath: str) -> None:
         """
-        Iterates through gt.txt to normalize the values between 0 and 1 so that it can 
-        be used for the YOLO model.
+        Iterates through the ground truth file (gt.txt) to normalize the values between 0 and 1 
+        so that it can be used for the YOLO model.
 
         Input: 
             - filepath to the 'gt' directory
@@ -150,15 +180,151 @@ class PedestrianDetection:
                                        sep=' ')
 
 
+    def create_training_folders(self, filepath: str) -> None:
+        """
+        Formats preprocessed dataset for YOLO model training.
+
+        The format is:
+            dataset_name/
+                |_ train/
+                    |_ images/
+                    |_ labels/
+                |_ val/
+                    |_ images/
+                    |_ labels/
+
+        Input:
+            - filepath for the directory to be formatted
+
+        An example input would be "MOT17Det/train"
+
+        IMPORTANT: This function must be called AFTER 'normalize_gt' AND 'create_image_annotations'
+        """
+
+        path_to_iterate = Path(filepath)
+        subdirectories = [item for item in path_to_iterate.iterdir() if item.is_dir()]
+        dataset_training_path = Path('dataset_training')
+
+        for subdirectory in subdirectories:
+
+            # count how many images there are then divide into an 80/20 split
+            image_folder_path = subdirectory / 'img1'
+            labels_folder_path = subdirectory / 'labels'
+            img_count = sum(1 for item in image_folder_path.iterdir() if item.is_file())
+
+            # create new directory in 'dataset_training'
+            new_dataset_training_path = dataset_training_path / image_folder_path.parent.name
+            new_dataset_training_path.mkdir(parents=True, exist_ok=True)
+
+            # create 'train' directory with 'images' and 'labels' subdirectories
+            train_directory = new_dataset_training_path / 'train'
+            train_directory.mkdir(parents=True, exist_ok=True)
+
+            # create train subdirectories
+            train_images_directory = train_directory / 'images'
+            train_images_directory.mkdir(parents=True, exist_ok=True)
+
+            train_labels_directory = train_directory / 'labels'
+            train_labels_directory.mkdir(parents=True, exist_ok=True)
+
+            # create 'val' directory with 'images' and 'labels' subdirectories
+            val_directory = new_dataset_training_path / 'val'
+            val_directory.mkdir(parents=True, exist_ok=True)
+
+            # create val subdirectories
+            val_images_directory = val_directory / 'images'
+            val_images_directory.mkdir(parents=True, exist_ok=True)
+
+            val_labels_directory = val_directory / 'labels'
+            val_labels_directory.mkdir(parents=True, exist_ok=True)
+
+            # transfer images from MOT17Det/train to this directory
+            self.transfer_images_and_labels_for_model_training(src_filepath=[image_folder_path, labels_folder_path],
+                                                               dest_filepath=[train_images_directory, val_images_directory,
+                                                                              train_labels_directory, val_labels_directory],
+                                                                img_count=img_count)
+            
+            # create .yaml file for these training folders
+            self.create_dataset_yaml_file(filepath=new_dataset_training_path,
+                                          train_path=train_directory,
+                                          val_path=val_directory)
+
+
+    def transfer_images_and_labels_for_model_training(self,
+                                                      src_filepath: list[Path],
+                                                      dest_filepath: list[Path],
+                                                      img_count: int) -> None:
+        """
+        Transfers images and labels from the 'MOT17Det/Train' directory to the 'dataset_training/MOT17-XX' training or val
+        directories.
+
+        Input:
+            - src_filepath: list[Path] = contains the filepaths 'train/MOT17-XX/img1' and 'train/MOT17-XX/labels'
+            - dest_filepath: list[Path] = contains the destination filepaths for images and labels
+            - img_count: int = number of images and labels which is the same number
+        """
+
+        # divide the img_count into an 80/20 split for training and validation
+        train_count = int(img_count * 0.8)
+
+        # transfer the images
+        image_counter = 1
+        for image, label in zip(sorted(src_filepath[0].iterdir()), sorted(src_filepath[1].iterdir())):
+
+            # check if counter > train_count, if so then start transferring files to validation
+            if image_counter > train_count:
+                shutil.copy2(src=image, dst=dest_filepath[1])
+                shutil.copy2(src=label, dst=dest_filepath[3])
+            else:
+                shutil.copy2(src=image, dst=dest_filepath[0])
+                shutil.copy2(src=label, dst=dest_filepath[2])
+
+            image_counter += 1
+
+    def create_dataset_yaml_file(self, filepath: Path, train_path: Path, val_path: Path) -> None:
+        """
+        For each subdirectory in 'dataset_training', create a .yaml file so that each subdirectory can be run
+        by a YOLO model.
+
+        Input:
+            - filepath: str = to the 'dataset_training' directory
+        """
+
+        # create yaml file
+        dataset_path = filepath / 'dataset.yaml'
+
+        # write to the file
+        with open(file=dataset_path, mode='w', encoding='utf-8') as f:
+            f.write('train: train\n')
+            f.write('val: val\n')
+            f.write(f'nc: {self.class_map_len}\n')
+            f.write('names:\n')
+            for key, val in self.class_map.items():
+                f.write(f'  {key}: {val}\n')
+
+
 if __name__ == "__main__":
 
     model = PedestrianDetection()
 
     model.normalize_gt(filepath='MOT17Det/train')
     model.create_image_annotations(filepath='MOT17Det/train')
+    model.create_training_folders(filepath='MOT17Det/train')
 
-    model.normalize_gt(filepath='MOT17Det/validation')
-    model.create_image_annotations(filepath='MOT17Det/validation')
+    # trained model saved at 'runs/detect/train3/weights/best.pt'
+    # this initial training was done on MOT17-05 because it had an imgsz of 640
+    # yolo_model = YOLO('yolo11m.pt')
+    # yolo_model.train(data='dataset.yaml', epochs=10, imgsz=640, device='mps')
 
-    yolo_model = YOLO('yolo11m.pt')
-    yolo_model.train(data='dataset.yaml', epochs=10, imgsz=640, device='mps')
+    # run trained model on MOT17-02
+    mot17_02_model = YOLO('runs/detect/train3/weights/best.pt')
+    mot17_02_train_results = mot17_02_model.train(data=model.dataset_training_yaml_paths['MOT17-02'],
+                                                  epochs=5,
+                                                  imgsz=1088,
+                                                  device='mps',
+                                                  batch=4)
+    
+    
+    # TODO: run on a model and prediction
+    # TODO: from the predicted images create a video using opencv
+    # TODO: write up on github 

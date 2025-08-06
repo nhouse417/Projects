@@ -116,6 +116,19 @@ But I'll explain here as well:
       - mAP50 -> Mean average precision calculated at an intersection over union (IoU) threshold of 0.50. It's a measure of the                       model's accuracy considering only the "easy" detections
       - mAP50-95 -> The average of the mean average precision calculated at varying IoU thresholds, ranging from 0.50 to 0.95. It                        gives a comprehensive view of the model's performance across different levels of detection difficulty
 
+A more in-depth explanation of these metrics are in the Ultralytics documentation. An example is how to evaluate these metrics for your specific application (image shown below).
+
+<img width="860" height="320" alt="image" src="https://github.com/user-attachments/assets/bd4119aa-c25f-454a-9330-f13535f5b4aa" />
+
+For this project, I want to focus on correctly identifying pedestrians so precision and recall are the metrics I'm going to look at.
+A good thing that Ultralytics does is it outputs performance metrics for precision, recall, precision and recall combined, and the F1 score curve. Shown below is the precision-recall curve and as you can see both metrics get better as training progresses.
+
+<img width="2250" height="1500" alt="BoxPR_curve" src="https://github.com/user-attachments/assets/2b6d9981-76c7-4cc4-bd06-189f572e0073" />
+
+
+
+
+
 
 
 

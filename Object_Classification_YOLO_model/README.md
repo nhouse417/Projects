@@ -173,7 +173,19 @@ The next improvement I want to make is eliminate detections that have a confiden
 
 ## Problems
 
+One problem that I had when setting up the project was that the Ultralytics package was throwing errors because PyTorch wasn't installed first. The fix was to recreate the virtual environment and install PyTorch first before the Ultralytics library.
+
+Another problem I had was when importing the computer vision library 'cv2'. Pylint was not recognizing the library or it's functions because cv2 is a C++ library and cv2 is Python binding to that library in C++. To fix I had to add '--generated-members=cv2" to the pylint args in my vscode setup (picture shown below).
+
+<img width="850" height="222" alt="image" src="https://github.com/user-attachments/assets/4fe162b0-f79e-4530-8ad4-ac6ae6e6566a" />
+
+This next problem is when I was training the model with an image size of 1080. I would get a RuntimeError saying that the MPS backend is out of memory. And this is due to no more memory being available to process the images. To fix this, I changed the batch size from the default 16 down to 4. Although this fixed the problem, training took longer since the model is processing images slower.
+
+The last problem that I encountered, which is still happening sometimes, is "NMS time limit 3.6000s exceeded" for the medium model. If you're using the small model, the NMS time limit is 2.8000s. But this is due to the NMS (Non-Maximum Suppression) time limit being exceeded because during this step the inference is taking longer than the predefined time limit. This happens when there's a large number of predicted bounding boxes in an image. A fix for this is either lowering the image size because it requires less computation or lowering the batch size. Another thing that could be done is lowering the amount of bounding boxes per image.
+
 ## Resources
 
-
+- [MOT16 dataset documentation](https://arxiv.org/pdf/1603.00831)
+- [Ultralytics documentation](https://docs.ultralytics.com)
+- [Pathlib python documentation](https://docs.python.org/3/library/pathlib.html)
 

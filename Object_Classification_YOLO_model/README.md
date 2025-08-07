@@ -145,12 +145,35 @@ Also another performance metric image is the results.jpg which shows the precisi
 
 - dfl_loss -> stands for distribution focal loss and it is a loss function designed to improve object detection accuracy by giving                 more weight to challenging instances making it easier for the model to learn.
 
+These metrics can be seen during training in the terminal.
 
+<img width="947" height="43" alt="image" src="https://github.com/user-attachments/assets/d6b7f398-bcce-4d2c-a118-f622c758c6c9" />
 
+### Other images produced from training
 
+The 'labels.png' file shows the number of instances detected of a certain class in the dataset.
 
+![labels](https://github.com/user-attachments/assets/f17c4dc8-c136-4b1d-a4c3-0ce078d511ca)
 
+Lastly, sample detection images of the model from the training and validation set are outputted.
 
+First is the training example.
+
+![train_batch0](https://github.com/user-attachments/assets/685fe724-ccf1-4c6d-9309-ea2ac1a83233)
+
+Next is the validation example with labels.
+
+![val_batch0_labels](https://github.com/user-attachments/assets/5e5cdf03-0ef9-406d-9e31-8cf968fb3055)
+
+## Improvements
+
+The first improvement I want to make is having this model run on a video live stream. For that I need to use the Computer Vision library cv2. 
+
+The next improvement I want to make is eliminate detections that have a confidence level of less than 70% so that training and inference can be done faster.
+
+## Problems
+
+## Resources
 
 
 

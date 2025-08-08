@@ -85,9 +85,6 @@ class PedestrianDetection:
             img_width = int(config['Sequence']['imWidth'])
             img_height = int(config['Sequence']['imHeight'])
 
-            # print(seq_info_path)
-            # print(f"img_width: {img_width} and img_height: {img_height}")
-
             # normalize the bounding box coordinates, image height and width
             normalized_data = self.convert_data_to_yolo(data=gt_df, img_width=img_width, img_height=img_height)
 
@@ -245,9 +242,7 @@ class PedestrianDetection:
                                                                 img_count=img_count)
             
             # create .yaml file for these training folders
-            self.create_dataset_yaml_file(filepath=new_dataset_training_path,
-                                          train_path=train_directory,
-                                          val_path=val_directory)
+            self.create_dataset_yaml_file(filepath=new_dataset_training_path)
 
 
     def transfer_images_and_labels_for_model_training(self,
@@ -281,7 +276,7 @@ class PedestrianDetection:
 
             image_counter += 1
 
-    def create_dataset_yaml_file(self, filepath: Path, train_path: Path, val_path: Path) -> None:
+    def create_dataset_yaml_file(self, filepath: Path) -> None:
         """
         For each subdirectory in 'dataset_training', create a .yaml file so that each subdirectory can be run
         by a YOLO model.
@@ -311,20 +306,23 @@ if __name__ == "__main__":
     model.create_image_annotations(filepath='MOT17Det/train')
     model.create_training_folders(filepath='MOT17Det/train')
 
-    # trained model saved at 'runs/detect/train3/weights/best.pt'
-    # this initial training was done on MOT17-05 because it had an imgsz of 640
-    # yolo_model = YOLO('yolo11m.pt')
-    # yolo_model.train(data='dataset.yaml', epochs=10, imgsz=640, device='mps')
-
     # run trained model on MOT17-02
-    mot17_02_model = YOLO('runs/detect/train3/weights/best.pt')
-    mot17_02_train_results = mot17_02_model.train(data=model.dataset_training_yaml_paths['MOT17-02'],
-                                                  epochs=5,
-                                                  imgsz=1088,
-                                                  device='mps',
-                                                  batch=4)
-    
-    
-    # TODO: run on a model and prediction
-    # TODO: from the predicted images create a video using opencv
-    # TODO: write up on github 
+    # batch= -1 for 60% GPU utilization; using all my GPU slows down my computer for other things
+    # mot17_02_model = YOLO('runs/detect/train3/weights/best.pt')
+    # mot17_02_train_results = mot17_02_model.train(data=model.dataset_training_yaml_paths['MOT17-02'],
+    #                                               epochs=5,
+    #                                               imgsz=640,
+    #                                               device='mps',
+    #                                               batch=-1)
+
+    # resume MOT17-02 training
+    # mot17_02_resume_training = YOLO('runs/detect/train6/weights/last.pt')
+    # mot17_02_resume_training_results = mot17_02_resume_training.train(resume=True)
+
+    # run inference using the previously trainined model
+    mot17_02_prediction = YOLO('runs/detect/train6/weights/best.pt')
+    mot17_02_prediction_results = mot17_02_prediction.predict(source='MOT17Det/test/MOT17-01/img1',
+                                                              conf=0.65,
+                                                              save=True,
+                                                              imgsz=640,
+                                                              show=True)

@@ -240,7 +240,7 @@ class PedestrianDetection:
                                                                dest_filepath=[train_images_directory, val_images_directory,
                                                                               train_labels_directory, val_labels_directory],
                                                                 img_count=img_count)
-            
+
             # create .yaml file for these training folders
             self.create_dataset_yaml_file(filepath=new_dataset_training_path)
 
@@ -297,6 +297,40 @@ class PedestrianDetection:
             for key, val in self.class_map.items():
                 f.write(f'  {key}: {val}\n')
 
+    def create_video_sequence(self) -> None:
+        """
+        Create a video sequence from the 'runs/detect/predict2' folder to show the model's inference.
+        This is hard coded to that filepath just to show inference.
+        """
+
+        # create video capture but from a sequence of images
+        cap = cv2.VideoCapture('runs/detect/predict2/%06d.jpg')
+
+        # check if it's opened correctly
+        if not cap.isOpened():
+            print('Error: could not open image sequence')
+        else:
+            print('Image sequence opened correctly!')
+
+        # loop through the images
+        while True:
+            ret, frame = cap.read()
+
+            if not ret:
+                print('End of image sequence')
+                break
+
+            # show the image
+            cv2.imshow('Image sequence', frame)
+
+            # keep the image sequence going until q is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        # release resources and destory all windows
+        cap.release()
+        cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
 
@@ -305,6 +339,7 @@ if __name__ == "__main__":
     model.normalize_gt(filepath='MOT17Det/train')
     model.create_image_annotations(filepath='MOT17Det/train')
     model.create_training_folders(filepath='MOT17Det/train')
+    model.create_video_sequence()
 
     # run trained model on MOT17-02
     # batch= -1 for 60% GPU utilization; using all my GPU slows down my computer for other things
@@ -320,9 +355,9 @@ if __name__ == "__main__":
     # mot17_02_resume_training_results = mot17_02_resume_training.train(resume=True)
 
     # run inference using the previously trainined model
-    mot17_02_prediction = YOLO('runs/detect/train6/weights/best.pt')
-    mot17_02_prediction_results = mot17_02_prediction.predict(source='MOT17Det/test/MOT17-01/img1',
-                                                              conf=0.65,
-                                                              save=True,
-                                                              imgsz=640,
-                                                              show=True)
+    # mot17_02_prediction = YOLO('runs/detect/train6/weights/best.pt')
+    # mot17_02_prediction_results = mot17_02_prediction.predict(source='MOT17Det/test/MOT17-01/img1',
+    #                                                           conf=0.65,
+    #                                                           save=True,
+    #                                                           imgsz=640,
+    #                                                           show=True)

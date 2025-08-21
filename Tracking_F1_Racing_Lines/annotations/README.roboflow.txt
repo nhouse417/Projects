@@ -1,8 +1,8 @@
 
-F1 Tracking - v1 v1.0.0
+F1 Tracking - v2 v1.0.1
 ==============================
 
-This dataset was exported via roboflow.com on August 20, 2025 at 5:58 AM GMT
+This dataset was exported via roboflow.com on August 21, 2025 at 12:15 AM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects

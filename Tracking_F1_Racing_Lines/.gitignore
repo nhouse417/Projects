@@ -1,0 +1,5 @@
+# Distribution / packaging
+venv/
+
+# virtual environments
+.venv/

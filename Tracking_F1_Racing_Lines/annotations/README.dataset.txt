@@ -1,4 +1,4 @@
-# F1 Tracking > v1.0.0
+# F1 Tracking > v1.0.1
 https://universe.roboflow.com/personal-projects-1z8ra/f1-tracking-ccjlv
 
 Provided by a Roboflow user

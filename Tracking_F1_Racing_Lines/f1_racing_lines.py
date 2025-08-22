@@ -10,7 +10,7 @@ replicate this project.
 
 
 # Third Party imports
-from ultralytics import YOLO
+from ultralytics import YOLO, settings
 
 
 class TrackCars():
@@ -24,13 +24,26 @@ class TrackCars():
         """
 
         self.model = YOLO(model='yolo12s.pt')
+        self.results: dict | None
+
+        # change ultralytics settings for MLflow
+        settings.update({"mlflow": True})
 
 
-    def train_model(self) -> None:
+    def train_model(self) -> dict | None:
         """
         Split the data into train and test. Then train the model using YOLOv12.
         """
 
+        self.results = self.model.train(data="annotations/data.yaml", epochs=50, imgsz=640, device='mps')
+
+        if self.results is not None:
+            return self.results
+
+
+
 if __name__ == "__main__":
 
     model = TrackCars()
+    results = model.train_model()
+    

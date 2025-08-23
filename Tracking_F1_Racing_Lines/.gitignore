@@ -12,3 +12,6 @@ yolo12s.pt
 
 # ignore 'car_images'; it's too big for git
 car_images/
+
+# ignore example videos which are used for testing inference
+example_videos/

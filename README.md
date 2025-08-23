@@ -1,6 +1,7 @@
 # Projects
 
-These are some of my projects: 
+These are some of my projects:
+- Tracking Formula 1 Racing Lines
 - Multi-Object Detection using YOLOv11 Model
 - Convolutional Neural Network (CNN) to Recognize Handwritten Digits 0-9
 - Linear Regression model on California Housing dataset

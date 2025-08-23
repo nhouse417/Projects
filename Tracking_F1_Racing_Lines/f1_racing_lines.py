@@ -7,30 +7,88 @@ replicate this project.
 """
 
 # Standard Library imports
-
+from pathlib import Path
 
 # Third Party imports
-from ultralytics import YOLO
+from ultralytics import YOLO, settings
+from ultralytics.engine.results import Results
 
-
-class TrackCars():
+class TrackCars:
     """
     This class will train the model and perform inference.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, model_path: str | Path | None = None, yaml_path: str | Path | None = None) -> None:
         """
-        Initialize the model.
+        Initialize the model. Both model and yaml path have to be None or have values.
+
+        Inputs:
+            - model: str = path to the model that you want to train
         """
 
-        self.model = YOLO(model='yolo12s.pt')
+        # if given a model then assign it along with the yaml path
+        if model_path is not None:
+            self.model_path = YOLO(model=model_path)
+        else:
+            self.model_path = YOLO(model='yolo12s.pt')
+
+        self.yaml_path = "annotations/data.yaml"
+
+        # for saving training results
+        self.train_results: dict | None
+
+        # for saving validation results
+        self.val_results: dict | None
+
+        # change ultralytics settings for MLflow
+        settings.update({"mlflow": True})
 
 
-    def train_model(self) -> None:
+    def train_model(self) -> dict | None:
         """
         Split the data into train and test. Then train the model using YOLOv12.
         """
 
+        self.train_results = self.model_path.train(data=self.yaml_path, epochs=50, imgsz=640, device='mps')
+
+        if self.train_results is not None:
+            return self.train_results
+
+
+    def validate_model(self) -> dict | None:
+        """
+        This function uses the val() function to evaluate the model.
+        """
+
+        self.val_results = self.model_path.val()
+        return self.val_results
+
+
+    def run_inference(self, data: str | Path) -> list[Results] | Results:
+        """
+        Run inference on the given data.
+
+        Inputs:
+            - data: str | Path = to the source of the data
+
+        Output:
+            - a list of Results objects or a Python generator of Results objects
+                - depends on the value for the 'stream' parameter in predict function
+                    - if False (default) -> list of Results objects
+                    - if True -> generator of Results objects
+        """
+
+        inference_results = self.model_path.predict(source=data,
+                                                    imgsz=640,
+                                                    conf=0.6,
+                                                    save=True,
+                                                    show=True)
+        return inference_results
+
+
 if __name__ == "__main__":
 
-    model = TrackCars()
+    model = TrackCars(model_path='runs/detect/train4/weights/best.pt')
+    # training_results = model.train_model()
+    # val_results = model.validate_model()
+    results = model.run_inference(data='example_videos/example.mp4')

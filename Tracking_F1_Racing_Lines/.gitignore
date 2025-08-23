@@ -3,3 +3,15 @@ venv/
 
 # virtual environments
 .venv/
+
+# YOLO annotation outputs, runs/ folder, and yolo12s.pt
+runs/
+annotations/valid/labels.cache
+annotations/train/labels.cache
+yolo12s.pt
+
+# ignore 'car_images'; it's too big for git
+car_images/
+
+# ignore example videos which are used for testing inference
+example_videos/

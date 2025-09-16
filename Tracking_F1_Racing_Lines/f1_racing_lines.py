@@ -17,6 +17,7 @@ import polars as pl
 from ultralytics import YOLO, settings
 from ultralytics.engine.results import Results
 
+
 class TrackCars:
     """
     This class will train the model and perform inference.

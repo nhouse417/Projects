@@ -15,3 +15,16 @@ car_images/
 
 # ignore example videos which are used for testing inference
 example_videos/
+
+# ignore the mlruns folder; going to be exporting these metrics to the server
+mlruns/
+
+# ignore environment file; don't want to commit sensitive information
+.env
+
+# ignore postgres-data
+postgres-data/
+
+# ignore creation of AWS Lambda Layers (for now)
+create_roboflow_layer/
+create_opencv_headless_layer/

@@ -7,11 +7,16 @@ replicate this project.
 """
 
 # Standard Library imports
+import os
 from pathlib import Path
 
 # Third Party imports
+from dotenv import load_dotenv
+import mlflow
+import polars as pl
 from ultralytics import YOLO, settings
 from ultralytics.engine.results import Results
+
 
 class TrackCars:
     """
@@ -32,13 +37,13 @@ class TrackCars:
         else:
             self.model_path = YOLO(model='yolo12s.pt')
 
-        self.yaml_path = "annotations/data.yaml"
+        if yaml_path is not None:
+            self.yaml_path = yaml_path
+        else:
+            self.yaml_path = "annotations/data.yaml"
 
         # for saving training results
         self.train_results: dict | None
-
-        # for saving validation results
-        self.val_results: dict | None
 
         # change ultralytics settings for MLflow
         settings.update({"mlflow": True})
@@ -55,13 +60,33 @@ class TrackCars:
             return self.train_results
 
 
-    def validate_model(self) -> dict | None:
+    def validate_model(self) -> None:
         """
-        This function uses the val() function to evaluate the model.
+        This function uses the val() function to evaluate the model. Then logs these metrics to MLflow.
         """
 
-        self.val_results = self.model_path.val()
-        return self.val_results
+        load_dotenv()
+
+        # set the mlflow server uri and set active experiment
+        mlflow.set_tracking_uri(uri=os.getenv('MLFLOW_TRACKING_URI', 'file:./mlruns'))
+        mlflow.set_experiment(experiment_name=os.getenv('MLFLOW_EXPERIMENT_NAME', 'default'))
+
+        # # start the mlflow run
+        with mlflow.start_run():
+
+            # validate the model
+            val_results = self.model_path.val()
+
+            # log validation metrics
+            val_results_df = pl.DataFrame(val_results.to_df())
+            logging_path: Path = val_results.save_dir / "validation_metrics.csv"
+            val_results_df.write_csv(logging_path, separator=',')
+
+            # save validation pictures that were produced
+            mlflow.log_artifacts(local_dir=val_results.save_dir)
+
+        # end the mlflow run
+        mlflow.end_run()
 
 
     def run_inference(self, data: str | Path) -> list[Results] | Results:
@@ -90,5 +115,5 @@ if __name__ == "__main__":
 
     model = TrackCars(model_path='runs/detect/train4/weights/best.pt')
     # training_results = model.train_model()
-    # val_results = model.validate_model()
-    results = model.run_inference(data='example_videos/example.mp4')
+    model.validate_model()
+    # results = model.run_inference(data='example_videos/example.mp4')

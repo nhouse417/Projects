@@ -19,7 +19,7 @@ This project uses an Ultralytics YOLOv12s model on initial training then uses th
 
 ## Technologies
 
-- Python
+- Python 3.12
 - Ultralytics YOLO model
 - Roboflow
 - MLFlow
@@ -28,7 +28,11 @@ This project uses an Ultralytics YOLOv12s model on initial training then uses th
 
 ## Preprocessing Data
 
+For this I used Roboflow's dataset annotation tools to preprocess this data. The dataset is public and can be seen [here](https://universe.roboflow.com/personal-projects-1z8ra/f1-tracking-ccjlv).
+
 ## Performance Metrics
+
+
 
 ## Deployment
 

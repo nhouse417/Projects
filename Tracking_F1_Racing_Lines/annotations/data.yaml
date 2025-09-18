@@ -8,6 +8,6 @@ names: ['Alpine', 'Aston Martin', 'Ferrari', 'Haas', 'Kick Sauber', 'McLaren', '
 roboflow:
   workspace: personal-projects-1z8ra
   project: f1-tracking-ccjlv
-  version: 3
+  version: 5
   license: CC BY 4.0
-  url: https://universe.roboflow.com/personal-projects-1z8ra/f1-tracking-ccjlv/dataset/3
+  url: https://universe.roboflow.com/personal-projects-1z8ra/f1-tracking-ccjlv/dataset/5

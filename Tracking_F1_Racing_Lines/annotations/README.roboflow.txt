@@ -1,8 +1,8 @@
 
-F1 Tracking - v3 v1.0.2
+F1 Tracking - v5 v1.0.3
 ==============================
 
-This dataset was exported via roboflow.com on August 22, 2025 at 5:28 AM GMT
+This dataset was exported via roboflow.com on September 17, 2025 at 3:28 AM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects
@@ -17,7 +17,7 @@ visit https://github.com/roboflow/notebooks
 
 To find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com
 
-The dataset includes 80 images.
+The dataset includes 83 images.
 Cars are annotated in YOLOv12 format.
 
 The following pre-processing was applied to each image:

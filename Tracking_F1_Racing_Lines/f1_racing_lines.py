@@ -113,7 +113,7 @@ class TrackCars:
 
 if __name__ == "__main__":
 
-    model = TrackCars(model_path='runs/detect/train4/weights/best.pt')
+    model = TrackCars(model_path='runs/detect/train5/weights/best.pt')
     # training_results = model.train_model()
     model.validate_model()
     # results = model.run_inference(data='example_videos/example.mp4')

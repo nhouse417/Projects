@@ -34,6 +34,10 @@ For this I used Roboflow's dataset annotation tools to preprocess this data. The
 
 The metrics used to evaluate this model are: precision, recall, f1 score, and precision-recall curve. These metrics are based on the bounding boxes. Also pictures of these metrics are sent to an MLFlow server which is locally hosted for now. Also a CSV file is created which shows the instances, images, and performance metrics said before. Pictures of the metrics shown on the server are shown in the performance metrics folder in this project. 
 
+Shown below is what the MLFlow server looks like. 
+<img width="1189" height="579" alt="image" src="https://github.com/user-attachments/assets/6b137bef-8ba4-4fa7-81c2-e1bb8605b8a0" />
+
+
 ## Deployment
 
 ## Improvements

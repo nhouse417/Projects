@@ -5,6 +5,7 @@ The purpose of this project is to track F1 racing lines to determine if the driv
 ## Table of Contents
 
 * [Setup](#setup)
+* [Workflow](#workflow)
 * [Technologies](#technologies)
 * [Preprocessing Data](#preprocessing-data)
 * [Performance Metrics](#performance-metrics)
@@ -16,6 +17,8 @@ The purpose of this project is to track F1 racing lines to determine if the driv
 ## Setup
 
 This project uses an Ultralytics YOLOv12s model on initial training then uses the newly trained model for future training. Model performance metrics which include training and validation are uploaded to an MLFlow server. For the dataset, it's collected and annotated using Roboflow where an AWS Lambda function is used to upload images to the dataset. 
+
+## Workflow
 
 ## Technologies
 

@@ -20,6 +20,10 @@ This project uses an Ultralytics YOLOv12s model on initial training then uses th
 
 ## Workflow
 
+The diagram below shows the workflow of this project.
+![f1_tracking_lines_workflow](https://github.com/user-attachments/assets/eadc5c7c-f1d3-4935-bee5-04354bc44fb6)
+
+
 ## Technologies
 
 - Python 3.12

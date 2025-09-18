@@ -23,9 +23,9 @@ This project uses an Ultralytics YOLOv12s model on initial training then uses th
 ## Technologies
 
 - Python 3.12
-- Ultralytics YOLO model
+- Ultralytics YOLOv12s model
 - Roboflow
-- MLFlow
+- MLFlow with PostgreSQL and MinIO for the backend
 - AWS S3 and Lambda functions
 - Docker
 

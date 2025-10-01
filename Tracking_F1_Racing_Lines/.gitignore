@@ -28,3 +28,6 @@ postgres-data/
 # ignore creation of AWS Lambda Layers (for now)
 create_roboflow_layer/
 create_opencv_headless_layer/
+
+# ignore the miami gp t17 video
+miami_gp_t17.mov

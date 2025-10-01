@@ -11,6 +11,7 @@ The purpose of this project is to track F1 racing lines to determine if the driv
 * [Performance Metrics](#performance-metrics)
 * [Deployment](#deployment)
 * [Improvements](#improvements)
+* [Improvements implemented](#improvements-implemented)
 * [Problems](#problems)
 * [Resources](#resources)
 
@@ -53,12 +54,16 @@ I have not deployed this model publicly yet. But the plan is to deploy this mode
 ## Improvements
 
 These are the improvements that I want to implement for this project:
-1. Implement tracking a F1 car through the video and trace its racing line
+1. Implement tracking a F1 car through the video and trace its racing line (9/30/2025)
 2. Create a bash script that labels and organizes new images without manual intervention
 3. automatic retraining when new data is inserted into the dataset
 4. update the model to the latest version if retraining was done
 5. deploying model on a cloud service so that others can use it
 6. monitor the model for model drift
+
+# Improvements implemented
+
+1. Implemented tracking cars throughout a video in function "track_racing_lines" function. It's still rudimentary, but it works at a basic level. I'll include a picture below. 
 
 ## Problems
 

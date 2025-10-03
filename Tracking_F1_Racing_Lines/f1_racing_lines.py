@@ -7,12 +7,15 @@ replicate this project.
 """
 
 # Standard Library imports
+from collections import defaultdict
 import os
 from pathlib import Path
 
 # Third Party imports
+import cv2
 from dotenv import load_dotenv
 import mlflow
+import numpy as np
 import polars as pl
 from ultralytics import YOLO, settings
 from ultralytics.engine.results import Results
@@ -111,9 +114,77 @@ class TrackCars:
         return inference_results
 
 
+    def track_racing_lines(self) -> None:
+        """
+        This code is from the YOLO documentation about how to track objects 
+        through multiple video frames. I added some checks as well.
+
+        Link here: https://docs.ultralytics.com/modes/track/#plotting-tracks-over-time
+        """
+
+        # Open the video file
+        video_path = "miami_gp_t17.mov"
+        cap = cv2.VideoCapture(video_path)
+
+        # Store the track history
+        track_history = defaultdict(lambda: [])
+
+        if not cap.isOpened():
+            print("Can't open video file.")
+            exit()
+
+        # Loop through the video frames
+        while cap.isOpened():
+            # Read a frame from the video
+            success, frame = cap.read()
+
+            if not success:
+                print("Can't receive the frame.")
+                break
+
+            if success:
+                # Run YOLO12 tracking on the frame, persisting tracks between frames
+                result = self.model_path.track(frame, persist=True)[0]
+
+                # Get the boxes and track IDs
+                if result.boxes and result.boxes.is_track:
+                    boxes = result.boxes.xywh.cpu()
+                    track_ids = result.boxes.id.int().cpu().tolist()
+
+                    # Visualize the result on the frame
+                    frame = result.plot()
+
+                    # Plot the tracks
+                    for box, track_id in zip(boxes, track_ids):
+                        x, y, _, _ = box
+                        track = track_history[track_id]
+                        track.append((float(x), float(y)))  # x, y center point
+                        if len(track) > 30:  # retain 30 tracks for 30 frames
+                            track.pop(0)
+
+                        # Draw the tracking lines
+                        points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                        cv2.polylines(frame, [points], isClosed=False, color=(230, 230, 230), thickness=10)
+
+                # Display the annotated frame
+                cv2.imshow("YOLO12 Tracking", frame)
+
+                # Break the loop if 'q' is pressed
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+            else:
+                # Break the loop if the end of the video is reached
+                break
+
+        # Release the video capture object and close the display window
+        cap.release()
+        cv2.destroyAllWindows()
+
+
 if __name__ == "__main__":
 
     model = TrackCars(model_path='runs/detect/train5/weights/best.pt')
     # training_results = model.train_model()
-    model.validate_model()
+    # model.validate_model()
     # results = model.run_inference(data='example_videos/example.mp4')
+    model.track_racing_lines()

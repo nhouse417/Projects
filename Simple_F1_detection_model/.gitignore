@@ -1,0 +1,5 @@
+# ignore the venv
+.venv
+
+# ignore F1 Tracking
+dataset/

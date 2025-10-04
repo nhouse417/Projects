@@ -3,3 +3,9 @@
 
 # ignore F1 Tracking
 dataset/
+
+# ignore the runs/ 
+runs/
+
+# ignore the pytorch model
+yolo11s.pt

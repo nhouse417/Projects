@@ -106,8 +106,8 @@ if __name__ == "__main__":
     # ---------------------------------
 
     # create a new model based on the previously trained model for our dataset
+    # update the 'model_path' when model is trained again
     model = SimpleF1DetectionModel(model_path='runs/detect/train/weights/best.pt')
-    training_results = model.train_model()
-
-    # explain that the pre-trained model is trained using the coco model but we
-    # need to train the model using our dataset
+    # training_results = model.train_model()
+    # validation_results = model.validate_model()
+    # prediction_results = model.run_inference(data='miami_gp_t17.mov')

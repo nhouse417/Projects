@@ -9,3 +9,6 @@ runs/
 
 # ignore the pytorch model
 yolo11s.pt
+
+# ignore the video for inference
+miami_gp_t17.mov

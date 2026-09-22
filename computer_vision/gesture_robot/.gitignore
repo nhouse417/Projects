@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# pixi environment (recreate with `pixi install`)
+.pixi/*
+!.pixi/config.toml
+
+# Build output: host tests, colcon, ESP-IDF
+build/
+
+# colcon workspace output
+ros2_ws/install/
+ros2_ws/log/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# ESP-IDF. menuconfig writes the Wi-Fi password and agent IP into sdkconfig,
+# so commit a credential-free sdkconfig.defaults instead.
+sdkconfig
+sdkconfig.old
+managed_components/

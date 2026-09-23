@@ -144,13 +144,19 @@ None of these were documented reliably, so each was measured on the device:
 
 ## Running the tests
 
-The debouncer tests are a self-contained runner with no framework to install. From the repo root:
+Both test files are self-contained runners with no framework to install, and neither needs the ROS environment. From the repo root:
 
 ```bash
+# Debouncer (C++)
 mkdir -p build && g++ -std=c++17 -Wall -Wextra -Werror -Ifirmware/common tests/debouncer_test.cpp firmware/common/gesture_debouncer.cpp -o build/debouncer_test && build/debouncer_test
+
+# Bridge line parser (Python)
+python3 tests/bridge_parser_test.py
 ```
 
-The 24 tests cover flicker, low scores, the score threshold, a single missed frame, gaps that break a streak, the 500 ms timeout, switching gestures, unknown classes, and `millis()` wraparound.
+The 24 debouncer tests cover flicker, low scores, the score threshold, a single missed frame, gaps that break a streak, the 500 ms timeout, switching gestures, unknown classes, and `millis()` wraparound.
+
+The bridge parser tests cover the wire-format contract: each gesture parsing, extra fields ignored, and dropping garbage, missing fields, bad types, and out-of-range gestures. That last case matters because this ROS build does not range-check `uint8`, so an out-of-range gesture would otherwise wrap (300 -> 44) at serialization. The parser (`gesture_bridge/parser.py`) is deliberately ROS-free so it can be tested this way; the full serial-read and publish path is checked with a pseudo-terminal harness that does need the ROS environment.
 
 ## Mac setup
 

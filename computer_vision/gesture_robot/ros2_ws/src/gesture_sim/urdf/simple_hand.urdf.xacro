@@ -16,6 +16,12 @@
   <xacro:property name="distal_len" value="0.035"/>
   <xacro:property name="finger_mass" value="0.02"/>
   <xacro:property name="joint_upper" value="1.6"/>
+  <!-- Segment geometry extends along its own local +Z. Pitching the j1
+       mount by 90 deg about Y makes q=0 point that +Z straight out along
+       the palm's +X (an open, extended finger); increasing q then curls it
+       toward -Z (down, into the palm), matching a closing fist. Without
+       this pitch, q=0 points straight up out of the palm's face instead. -->
+  <xacro:property name="finger_rest_pitch" value="1.5708"/>
 
   <material name="skin">
     <color rgba="0.87 0.72 0.60 1.0"/>
@@ -51,7 +57,7 @@
     <joint name="${name}_j1" type="revolute">
       <parent link="palm"/>
       <child link="${name}_proximal"/>
-      <origin xyz="${x} ${y} ${z}" rpy="0 0 ${yaw}"/>
+      <origin xyz="${x} ${y} ${z}" rpy="0 ${finger_rest_pitch} ${yaw}"/>
       <axis xyz="0 1 0"/>
       <limit lower="0.0" upper="${joint_upper}" effort="5.0" velocity="3.0"/>
     </joint>

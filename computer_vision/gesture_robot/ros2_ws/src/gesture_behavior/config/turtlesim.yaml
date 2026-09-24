@@ -1,0 +1,9 @@
+gesture_behavior:
+  ros__parameters:
+    robot: turtlesim                  # turtlesim, turtlebot3, or hand
+    cmd_vel_topic: /turtle1/cmd_vel
+    watchdog_timeout_s: 2.0
+    velocities:
+      rock:     {linear: 0.0, angular: 0.0}
+      paper:    {linear: 1.0, angular: 0.0}
+      scissors: {linear: 0.0, angular: 1.5}

@@ -7,9 +7,9 @@ A hand gesture seen by a XIAO Vision AI Camera drives a simulated robot in ROS 2
 | Phase | Work | Status |
 |---|---|---|
 | 1 | Firmware v1: Arduino sketch reads gestures, debounces, prints JSON over USB | Done |
-| 2 | `gesture_msgs` contract and the Python serial bridge | Next |
-| 3 | C++ behavior node drives turtlesim, with a safety watchdog | Planned |
-| 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Planned |
+| 2 | `gesture_msgs` contract and the Python serial bridge | Done |
+| 3 | C++ behavior node drives turtlesim, with a safety watchdog | Done |
+| 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Next |
 | 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | Planned |
 | 6 | Swap the transport, rerun the same tests, benchmark v1 against v2 | Planned |
 
@@ -98,9 +98,14 @@ gesture_robot/
 │   ├── common/                 # gesture_debouncer.h/.cpp, shared by v1 and v2
 │   └── v1_arduino/
 │       └── gesture_camera_v1/  # Arduino sketch; debouncer files are symlinks into common/
-├── ros2_ws/src/                # ROS 2 packages, from phase 2
+├── ros2_ws/src/
+│   ├── gesture_msgs/           # the Gesture.msg interface contract
+│   ├── gesture_bridge/         # v1: reads JSON over USB, publishes /gesture/event
+│   ├── gesture_behavior/       # C++ node: gestures -> velocity, with a watchdog
+│   └── gesture_bringup/        # one launch file for the whole stack
 └── tests/
-    └── debouncer_test.cpp      # host unit tests for the debouncer
+    ├── debouncer_test.cpp      # host unit tests for the debouncer (C++)
+    └── bridge_parser_test.py   # host unit tests for the bridge parser (Python)
 ```
 
 ## Firmware v1
@@ -141,6 +146,31 @@ None of these were documented reliably, so each was measured on the device:
 3. Select board **XIAO_ESP32C3**, keep **USB CDC On Boot** enabled, and pick the `/dev/cu.usbmodem…` port.
 4. Upload. If it can't sync, hold BOOT, tap RESET, release BOOT, and try again.
 5. Open the Serial Monitor at 115200 baud. Set `LOG_RAW_BOXES` to 1 to also print every raw box.
+
+## Behavior node
+
+`gesture_behavior` (C++, rclcpp) subscribes to `/gesture/event` and drives the robot:
+
+- **Change detection.** It holds the active gesture. A heartbeat carrying the same gesture only refreshes the watchdog; it does not re-trigger anything.
+- **Velocity output.** A 10 Hz timer publishes the active gesture's velocity as `geometry_msgs/Twist` on `cmd_vel_topic`. `NONE` publishes zero. Turtlesim needs a continuous stream, so this publishes every tick, not only on change.
+- **Watchdog.** A 5 Hz timer drops the active gesture to `NONE` (stop) when no message has arrived for `watchdog_timeout_s` (2 s, two missed heartbeats). This is what stops the robot when the camera is unplugged.
+- **Mapping.** The topic and the per-gesture velocities load from a per-robot YAML (`config/turtlesim.yaml`), so remapping needs no rebuild.
+
+`TwistStamped` output (for some TurtleBot3 setups) and the hand `JointTrajectory` output come in phase 4, where they can be tested against the sims that need them.
+
+### Running the stack
+
+```bash
+pixi shell
+cd ros2_ws && colcon build && source install/setup.zsh
+ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.usbmodemXXXX robot:=turtlesim
+```
+
+Rock stops the turtle, paper drives it forward, scissors rotates it, and unplugging the camera stops it within 2 s.
+
+### macOS build note
+
+On RoboStack (conda) macOS, a C++ node that uses a message package can abort at startup with `symbol not found in flat namespace '_PyExc_RuntimeError'`. The message package's CMake targets transitively pull in their `rosidl_generator_py` libraries, which load at startup but need libpython, which a standalone C++ binary doesn't link. `gesture_behavior/CMakeLists.txt` links only the `__rosidl_typesupport_cpp` targets and adds `-Wl,-dead_strip_dylibs`, which drops the unused Python libraries from the load commands. The real typesupport is loaded by the middleware at runtime, so this is safe, and it matches how the prebuilt RoboStack binaries are linked.
 
 ## Running the tests
 

@@ -1,0 +1,12 @@
+gesture_behavior:
+  ros__parameters:
+    robot: hand                       # turtlesim, turtlebot3, or hand
+    watchdog_timeout_s: 2.0
+    move_time_s: 0.8
+    joint_trajectory_topic: /hand_controller/joint_trajectory
+    joint_names: [thumb_j1, thumb_j2, index_j1, index_j2, middle_j1, middle_j2,
+                  ring_j1, ring_j2, pinky_j1, pinky_j2]
+    positions:
+      rock:     [1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4]
+      paper:    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      scissors: [1.4, 1.4, 0.0, 0.0, 0.0, 0.0, 1.4, 1.4, 1.4, 1.4]

@@ -101,7 +101,8 @@ gesture_robot/
 ├── ros2_ws/src/
 │   ├── gesture_msgs/           # the Gesture.msg interface contract
 │   ├── gesture_bridge/         # v1: reads JSON over USB, publishes /gesture/event
-│   ├── gesture_behavior/       # C++ node: gestures -> velocity, with a watchdog
+│   ├── gesture_behavior/       # C++ node: gestures -> velocity or joint trajectory
+│   ├── gesture_sim/            # hand xacro, ros2_control config, RViz view
 │   └── gesture_bringup/        # one launch file for the whole stack
 └── tests/
     ├── debouncer_test.cpp      # host unit tests for the debouncer (C++)
@@ -156,7 +157,7 @@ None of these were documented reliably, so each was measured on the device:
 - **Watchdog.** A 5 Hz timer drops the active gesture to `NONE` (stop) when no message has arrived for `watchdog_timeout_s` (2 s, two missed heartbeats). This is what stops the robot when the camera is unplugged.
 - **Mapping.** The topic and the per-gesture velocities load from a per-robot YAML (`config/turtlesim.yaml`), so remapping needs no rebuild.
 
-`TwistStamped` output (for some TurtleBot3 setups) and the hand `JointTrajectory` output come in phase 4, where they can be tested against the sims that need them.
+The hand's `JointTrajectory` output lands in phase 4 (below). `TwistStamped` output, for TurtleBot3 setups that expect it on `/cmd_vel` instead of `Twist`, is still deferred to phase 4's Gazebo half, where a sim that needs it exists to test against.
 
 ### Running the stack
 
@@ -171,6 +172,26 @@ Rock stops the turtle, paper drives it forward, scissors rotates it, and unplugg
 ### macOS build note
 
 On RoboStack (conda) macOS, a C++ node that uses a message package can abort at startup with `symbol not found in flat namespace '_PyExc_RuntimeError'`. The message package's CMake targets transitively pull in their `rosidl_generator_py` libraries, which load at startup but need libpython, which a standalone C++ binary doesn't link. `gesture_behavior/CMakeLists.txt` links only the `__rosidl_typesupport_cpp` targets and adds `-Wl,-dead_strip_dylibs`, which drops the unused Python libraries from the load commands. The real typesupport is loaded by the middleware at runtime, so this is safe, and it matches how the prebuilt RoboStack binaries are linked.
+
+## Hand mimic (RViz2)
+
+`gesture_sim` holds a five-finger hand (`urdf/simple_hand.urdf.xacro`): a palm with two revolute joints per finger (`thumb_j1`/`thumb_j2`, `index_j1`/`index_j2`, `middle_j1`/`middle_j2`, `ring_j1`/`ring_j2`, `pinky_j1`/`pinky_j2`), both joints in a finger always moving together. `ros2_control`'s `mock_components/GenericSystem` backs it for now, driven by a `joint_trajectory_controller`; `gz_ros2_control` takes over the same joints once Gazebo joins in phase 4's second half, with no change to the hand model, the controller config, or the behavior node.
+
+| Gesture | Every joint (rad) |
+|---|---|
+| Rock | 1.4 (every finger curled) |
+| Paper | 0.0 (every finger straight) |
+| Scissors | Index and middle 0.0; thumb, ring, and pinky 1.4 |
+
+`gesture_behavior` picks this output over `Twist` from the same `robot` parameter that already selected the YAML file: `config/hand.yaml` sets `robot: hand`, which switches the node to publish one `JointTrajectory` point on `/hand_controller/joint_trajectory` whenever the confirmed gesture changes. Unlike the turtlesim/TurtleBot3 path, the watchdog dropping to `NONE` does not move the hand: a static hand has no safety reason to react to a lost signal, so it just holds its last pose.
+
+```bash
+pixi shell
+cd ros2_ws && colcon build && source install/setup.zsh
+ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.usbmodemXXXX robot:=hand
+```
+
+This starts `robot_state_publisher`, a standalone `controller_manager` (mock hardware, no Gazebo yet), the `joint_state_broadcaster` and `hand_controller` spawners, `gesture_behavior`, and RViz2 with a saved view. Each gesture mimics on the hand within about a second; TurtleBot3 and Gazebo join in a follow-up phase 4 PR, reusing this same model and controller config.
 
 ## Running the tests
 

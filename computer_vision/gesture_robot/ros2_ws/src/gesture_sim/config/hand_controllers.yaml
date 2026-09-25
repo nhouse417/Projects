@@ -1,0 +1,14 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    hand_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+hand_controller:
+  ros__parameters:
+    joints: [thumb_j1, thumb_j2, index_j1, index_j2, middle_j1, middle_j2,
+             ring_j1, ring_j2, pinky_j1, pinky_j2]
+    command_interfaces: [position]
+    state_interfaces: [position]

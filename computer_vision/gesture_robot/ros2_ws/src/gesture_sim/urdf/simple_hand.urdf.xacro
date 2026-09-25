@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="simple_hand">
+
+  <!-- mock_components/GenericSystem drives this in RViz2 (phase 4, stage A).
+       gz_ros2_control/GazeboSimSystem takes over once phase 4's Gazebo half
+       passes use_gazebo:=true; the <gazebo> plugin block that wires the
+       controller manager into Gazebo is added then, not here. -->
+  <xacro:arg name="use_gazebo" default="false"/>
+
+  <xacro:property name="palm_x" value="0.09"/>
+  <xacro:property name="palm_y" value="0.08"/>
+  <xacro:property name="palm_z" value="0.02"/>
+  <xacro:property name="seg_w" value="0.014"/>
+  <xacro:property name="seg_d" value="0.014"/>
+  <xacro:property name="proximal_len" value="0.045"/>
+  <xacro:property name="distal_len" value="0.035"/>
+  <xacro:property name="finger_mass" value="0.02"/>
+  <xacro:property name="joint_upper" value="1.6"/>
+  <!-- Segment geometry extends along its own local +Z. Pitching the j1
+       mount by 90 deg about Y makes q=0 point that +Z straight out along
+       the palm's +X (an open, extended finger); increasing q then curls it
+       toward -Z (down, into the palm), matching a closing fist. Without
+       this pitch, q=0 points straight up out of the palm's face instead. -->
+  <xacro:property name="finger_rest_pitch" value="1.5708"/>
+
+  <material name="skin">
+    <color rgba="0.87 0.72 0.60 1.0"/>
+  </material>
+
+  <xacro:macro name="box_inertial" params="mass x y z">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass / 12.0 * (y*y + z*z)}" ixy="0" ixz="0"
+        iyy="${mass / 12.0 * (x*x + z*z)}" iyz="0"
+        izz="${mass / 12.0 * (x*x + y*y)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Two revolute joints per finger (<name>_j1 at the palm, <name>_j2 at the
+       knuckle), both driven together for one pose: 0.0 rad is straight, and
+       higher values curl the finger toward the palm. -->
+  <xacro:macro name="finger" params="name x y z yaw">
+    <link name="${name}_proximal">
+      <visual>
+        <origin xyz="0 0 ${proximal_len / 2}" rpy="0 0 0"/>
+        <geometry><box size="${seg_w} ${seg_d} ${proximal_len}"/></geometry>
+        <material name="skin"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${proximal_len / 2}" rpy="0 0 0"/>
+        <geometry><box size="${seg_w} ${seg_d} ${proximal_len}"/></geometry>
+      </collision>
+      <xacro:box_inertial mass="${finger_mass}" x="${seg_w}" y="${seg_d}" z="${proximal_len}"/>
+    </link>
+
+    <joint name="${name}_j1" type="revolute">
+      <parent link="palm"/>
+      <child link="${name}_proximal"/>
+      <origin xyz="${x} ${y} ${z}" rpy="0 ${finger_rest_pitch} ${yaw}"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="0.0" upper="${joint_upper}" effort="5.0" velocity="3.0"/>
+    </joint>
+
+    <link name="${name}_distal">
+      <visual>
+        <origin xyz="0 0 ${distal_len / 2}" rpy="0 0 0"/>
+        <geometry><box size="${seg_w * 0.8} ${seg_d * 0.8} ${distal_len}"/></geometry>
+        <material name="skin"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${distal_len / 2}" rpy="0 0 0"/>
+        <geometry><box size="${seg_w * 0.8} ${seg_d * 0.8} ${distal_len}"/></geometry>
+      </collision>
+      <xacro:box_inertial mass="${finger_mass * 0.7}" x="${seg_w * 0.8}" y="${seg_d * 0.8}" z="${distal_len}"/>
+    </link>
+
+    <joint name="${name}_j2" type="revolute">
+      <parent link="${name}_proximal"/>
+      <child link="${name}_distal"/>
+      <origin xyz="0 0 ${proximal_len}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="0.0" upper="${joint_upper}" effort="5.0" velocity="3.0"/>
+    </joint>
+  </xacro:macro>
+
+  <link name="world"/>
+
+  <joint name="world_to_palm" type="fixed">
+    <parent link="world"/>
+    <child link="palm"/>
+  </joint>
+
+  <link name="palm">
+    <visual>
+      <geometry><box size="${palm_x} ${palm_y} ${palm_z}"/></geometry>
+      <material name="skin"/>
+    </visual>
+    <collision>
+      <geometry><box size="${palm_x} ${palm_y} ${palm_z}"/></geometry>
+    </collision>
+    <xacro:box_inertial mass="0.3" x="${palm_x}" y="${palm_y}" z="${palm_z}"/>
+  </link>
+
+  <!-- Mounted along the palm's leading edge (+x), fanned out across y;
+       the thumb mounts on the side edge, rotated out. -->
+  <xacro:finger name="index"  x="0.045" y="-0.028" z="0.01" yaw="0.0"/>
+  <xacro:finger name="middle" x="0.045" y="-0.009" z="0.01" yaw="0.0"/>
+  <xacro:finger name="ring"   x="0.045" y="0.009"  z="0.01" yaw="0.0"/>
+  <xacro:finger name="pinky"  x="0.045" y="0.028"  z="0.01" yaw="0.0"/>
+  <xacro:finger name="thumb"  x="0.01"  y="-0.045" z="0.01" yaw="-1.0"/>
+
+  <ros2_control name="hand" type="system">
+    <hardware>
+      <xacro:if value="$(arg use_gazebo)">
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </xacro:if>
+      <xacro:unless value="$(arg use_gazebo)">
+        <plugin>mock_components/GenericSystem</plugin>
+      </xacro:unless>
+    </hardware>
+    <joint name="thumb_j1"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="thumb_j2"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="index_j1"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="index_j2"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="middle_j1"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="middle_j2"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="ring_j1"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="ring_j2"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="pinky_j1"><command_interface name="position"/><state_interface name="position"/></joint>
+    <joint name="pinky_j2"><command_interface name="position"/><state_interface name="position"/></joint>
+  </ros2_control>
+
+</robot>

@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(gesture_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 
 add_executable(gesture_behavior_node src/behavior_node.cpp)
 # Link only the C++ typesupport target of each message package. Neither
@@ -21,6 +22,7 @@ target_link_libraries(gesture_behavior_node
   rclcpp::rclcpp
   geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
   gesture_msgs::gesture_msgs__rosidl_typesupport_cpp
+  trajectory_msgs::trajectory_msgs__rosidl_typesupport_cpp
 )
 
 # Drop dylibs whose symbols we never use from the load commands. Message

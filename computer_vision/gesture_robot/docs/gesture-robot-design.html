@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gesture-controlled robot: system design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F6F5; --surface:#FFFFFF; --ink:#17201D; --muted:#55625E; --rule:#D2DAD7;
+  --mask:#0D6655; --mask-tint:#E2EFEB; --copper:#9C5A22; --copper-tint:#F5E9DD; --code:#EAEFED;
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111715; --surface:#18201D; --ink:#E3E9E6; --muted:#9BA8A3; --rule:#2E3935;
+    --mask:#5BBFA8; --mask-tint:#15302A; --copper:#DE9D62; --copper-tint:#33251A; --code:#1A2320;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111715; --surface:#18201D; --ink:#E3E9E6; --muted:#9BA8A3; --rule:#2E3935;
+  --mask:#5BBFA8; --mask-tint:#15302A; --copper:#DE9D62; --copper-tint:#33251A; --code:#1A2320;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:1.0625rem;line-height:1.68;font-optical-sizing:auto}
+img,svg{max-width:100%}
+a{color:var(--mask);text-underline-offset:.18em}
+a:focus-visible{outline:2px solid var(--mask);outline-offset:2px;border-radius:2px}
+.page{max-width:1180px;margin:0 auto;padding:3.5rem 1.5rem 5rem}
+header.top h1{font-family:var(--sans);font-stretch:125%;font-weight:760;font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.04;letter-spacing:-.015em;margin:0 0 1rem;max-width:18ch}
+header.top p.lede{font-size:1.2rem;line-height:1.55;color:var(--muted);max-width:44rem;margin:0}
+.rail{list-style:none;margin:3rem 0 .9rem;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.rail li{position:relative;padding:2.4rem 1rem 0 0}
+.rail li::before{content:"";position:absolute;top:.8rem;left:0;right:0;height:3px;background:var(--track)}
+.rail li.v1{--track:var(--mask)}
+.rail li.v2{--track:var(--copper)}
+.rail .node{position:absolute;top:0;left:0;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--paper);border:3px solid var(--track);display:grid;place-items:center;font-family:var(--sans);font-weight:700;font-size:.85rem;color:var(--ink)}
+.rail strong{display:block;font-family:var(--sans);font-stretch:108%;font-weight:640;font-size:1rem;line-height:1.25}
+.rail .desc{display:block;color:var(--muted);font-size:.92rem;line-height:1.42;margin-top:.35rem}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-family:var(--sans);font-size:.88rem;color:var(--muted);margin:0 0 3rem}
+.legend span{display:inline-flex;align-items:center;gap:.5rem}
+.legend i{display:inline-block;width:1.6rem;height:3px}
+@media (max-width:760px){
+  .rail{grid-template-columns:1fr}
+  .rail li{padding:0 0 1.5rem 3rem}
+  .rail li::before{top:0;bottom:0;left:calc(.95rem - 1.5px);right:auto;width:3px;height:auto}
+}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:2rem;border-top:1px solid var(--rule);padding-top:2.5rem}
+nav.toc{font-family:var(--sans);font-size:.92rem}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc;columns:2;column-gap:2rem}
+nav.toc li{counter-increment:toc;margin:0 0 .45rem;break-inside:avoid}
+nav.toc li::before{content:counter(toc);display:inline-block;width:1.6rem;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a{color:var(--ink);text-decoration:none}
+nav.toc a:hover{color:var(--mask);text-decoration:underline}
+@media (min-width:1000px){
+  .layout{grid-template-columns:200px minmax(0,1fr);gap:3.5rem}
+  nav.toc{position:sticky;top:1.5rem;align-self:start}
+  nav.toc ol{columns:1}
+}
+main{max-width:46rem;min-width:0}
+section{margin:0 0 3.6rem;scroll-margin-top:1.5rem}
+h2{font-family:var(--sans);font-stretch:112%;font-weight:680;font-size:1.65rem;line-height:1.2;letter-spacing:-.005em;margin:0 0 1rem}
+h2 .n{color:var(--muted);font-weight:500;margin-right:.5rem;font-variant-numeric:tabular-nums}
+h3{font-family:var(--sans);font-stretch:104%;font-weight:640;font-size:1.15rem;line-height:1.3;margin:2.2rem 0 .6rem}
+p{margin:0 0 1rem}
+ul,ol.steps{margin:0 0 1rem;padding-left:1.3rem}
+li{margin:0 0 .4rem}
+code{font-family:var(--mono);font-size:.84em;background:var(--code);padding:.08em .32em;border-radius:4px}
+pre{background:var(--code);border-radius:6px;padding:1rem 1.15rem;overflow-x:auto;margin:0 0 1.25rem;line-height:1.55}
+pre code{background:none;padding:0;font-size:.8rem;border-radius:0}
+.file{font-family:var(--sans);font-size:.82rem;color:var(--muted);margin:0 0 .35rem}
+.table-wrap{overflow-x:auto;margin:0 0 1.4rem}
+table{border-collapse:collapse;width:100%;font-size:.94rem;line-height:1.5}
+th{font-family:var(--sans);font-weight:620;text-align:left;border-bottom:1.5px solid var(--ink);padding:.45rem .8rem .45rem 0;white-space:nowrap}
+td{border-bottom:1px solid var(--rule);padding:.55rem .8rem .55rem 0;vertical-align:top}
+td:first-child{font-weight:600}
+dl.stack{display:grid;grid-template-columns:max-content 1fr;gap:.45rem 1.4rem;margin:0 0 1rem}
+dl.stack dt{font-family:var(--sans);font-weight:620;font-size:.95rem}
+dl.stack dd{margin:0}
+@media (max-width:560px){dl.stack{grid-template-columns:1fr}dl.stack dd{margin-bottom:.6rem}}
+.diagram{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:1rem;margin:0 0 1.4rem}
+.diagram svg{display:block;width:100%;height:auto}
+.d-t{font-family:var(--sans);font-size:14px;font-weight:620;fill:var(--ink)}
+.d-s{font-family:var(--sans);font-size:12px;fill:var(--muted)}
+.d-l{font-family:var(--sans);font-size:11.5px;fill:var(--muted)}
+.d-box{fill:var(--surface);stroke:var(--rule);stroke-width:1}
+.d-teal{fill:var(--mask-tint);stroke:var(--mask);stroke-width:1}
+.d-cop{fill:var(--copper-tint);stroke:var(--copper);stroke-width:1;stroke-dasharray:4 3}
+.d-cont{fill:none;stroke:var(--rule);stroke-width:1;stroke-dasharray:5 4}
+.d-arr{stroke:var(--muted);stroke-width:1.5;fill:none}
+.caption{font-family:var(--sans);font-size:.85rem;color:var(--muted);margin:-.8rem 0 1.4rem}
+.verify{border-left:3px solid var(--copper);background:var(--copper-tint);padding:.75rem 1rem;margin:0 0 1.25rem;border-radius:0}
+.verify p:last-child{margin:0}
+.contract{border:1.5px solid var(--mask);border-radius:8px;padding:1.2rem 1.3rem .3rem;margin:0 0 1.4rem;background:var(--surface)}
+.tag{font-family:var(--sans);font-size:.78rem;font-weight:600;padding:.1rem .45rem;border-radius:3px;white-space:nowrap}
+.tag.v1{background:var(--mask-tint);color:var(--mask)}
+.tag.v2{background:var(--copper-tint);color:var(--copper)}
+footer{border-top:1px solid var(--rule);padding-top:1.4rem;color:var(--muted);font-size:.92rem}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <h1>Gesture-controlled robot: system design</h1>
+  <p class="lede">A hand gesture seen by the XIAO Vision AI Camera drives a simulated robot in Gazebo. The ROS 2 link starts as a Python serial bridge and is later replaced by micro-ROS, without changing anything downstream. Development runs natively on an M4 Mac.</p>
+</header>
+
+<ol class="rail" aria-label="Build phases">
+  <li class="v1"><span class="node">1</span><strong>Firmware v1</strong><span class="desc">Arduino sketch reads gestures, debounces, prints JSON over USB</span></li>
+  <li class="v1"><span class="node">2</span><strong>Contract and bridge</strong><span class="desc"><code>gesture_msgs</code> and the Python bridge publish <code>/gesture/event</code></span></li>
+  <li class="v1"><span class="node">3</span><strong>Behavior node</strong><span class="desc">C++ node drives turtlesim, with a safety watchdog</span></li>
+  <li class="v1"><span class="node">4</span><strong>Hand mimic, then Gazebo</strong><span class="desc">Hand in RViz2 first, then hand and TurtleBot3 in Gazebo</span></li>
+  <li class="v2"><span class="node">5</span><strong>Firmware v2</strong><span class="desc">ESP-IDF, your own AT client, micro-ROS over Wi-Fi</span></li>
+  <li class="v2"><span class="node">6</span><strong>Swap and benchmark</strong><span class="desc">Retire the bridge, rerun the same tests, compare v1 and v2</span></li>
+</ol>
+<div class="legend">
+  <span><i style="background:var(--mask)"></i>Data reaches ROS 2 through the serial bridge</span>
+  <span><i style="background:var(--copper)"></i>Data reaches ROS 2 through micro-ROS</span>
+</div>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#goals">Goals</a></li>
+    <li><a href="#stack">Stack and Mac setup</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#contract">Interface contract</a></li>
+    <li><a href="#links">Links and wire formats</a></li>
+    <li><a href="#components">Components</a></li>
+    <li><a href="#migration">Migration to micro-ROS</a></li>
+    <li><a href="#repo">Repo and launch</a></li>
+    <li><a href="#failures">Failure handling</a></li>
+    <li><a href="#testing">Testing and benchmarks</a></li>
+    <li><a href="#verify">Verify on your hardware</a></li>
+    <li><a href="#plan">Build plan by phase</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="goals">
+  <h2><span class="n">1</span>Goals</h2>
+  <ul>
+    <li>Rock, paper, and scissors each trigger a distinct, repeatable robot action in Gazebo.</li>
+    <li>A dropped gesture, unplugged camera, or lost Wi-Fi link always stops the robot within about 2 seconds.</li>
+    <li>The camera-to-ROS link can be swapped from a Python bridge (v1) to micro-ROS (v2) with no change to the behavior node, the simulation, or the topic.</li>
+    <li>The project produces measurable v1 vs v2 results for a portfolio write-up.</li>
+  </ul>
+  <p><strong>Out of scope:</strong> training a custom model, running on real robot hardware, and continuous hand tracking. The bounding-box center is carried in the message so continuous control can be added later.</p>
+</section>
+
+<section id="stack">
+  <h2><span class="n">2</span>Stack and Mac setup</h2>
+  <dl class="stack">
+    <dt>Camera</dt><dd>XIAO Vision AI Camera: Grove Vision AI V2 (Himax WiseEye2) + XIAO ESP32-C3 + OV5647</dd>
+    <dt>Model</dt><dd>SenseCraft AI Gesture Detection (rock, paper, scissors), deployed from the SenseCraft web tool</dd>
+    <dt>Dev machine</dt><dd>M4 Mac running ROS 2 Jazzy natively through RoboStack (<code>pixi</code>). Fallback: Ubuntu 24.04 ARM virtual machine.</dd>
+    <dt>Simulation</dt><dd>turtlesim and RViz2 (with <code>ros2_control</code> mock hardware) through phase 4, then Gazebo Harmonic with <code>gz_ros2_control</code></dd>
+    <dt>Firmware v1</dt><dd>Arduino IDE on macOS, Arduino-ESP32, <code>Seeed_Arduino_SSCMA</code> library</dd>
+    <dt>Firmware v2</dt><dd>ESP-IDF 5.4 or newer on macOS, <code>micro_ros_espidf_component</code> (jazzy branch), cJSON for parsing</dd>
+    <dt>Languages</dt><dd>C++ on the device and in the behavior node, Python for the bridge, XML and YAML for robot description and config</dd>
+  </dl>
+
+  <h3>Setting up the Mac (phases 1 to 4)</h3>
+<pre><code>curl -fsSL https://pixi.sh/install.sh | sh
+pixi init gesture_robot -c robostack-jazzy -c conda-forge
+cd gesture_robot
+pixi add ros-jazzy-desktop ros-jazzy-ros2-control ros-jazzy-ros2-controllers \
+         ros-jazzy-xacro colcon-common-extensions setuptools pyserial \
+         compilers cmake pkg-config make ninja
+pixi shell</code></pre>
+  <p><code>ros-jazzy-desktop</code> includes RViz2 and turtlesim. If a package isn't found, <code>pixi search &lt;name&gt;</code> shows what's available. Work inside <code>pixi shell</code> for all ROS 2 commands and <code>colcon build</code>.</p>
+
+  <h3>Adding Gazebo (after phase 4)</h3>
+<pre><code>pixi add ros-jazzy-ros-gz ros-jazzy-gz-ros2-control ros-jazzy-turtlebot3-gazebo</code></pre>
+
+  <h3>macOS differences from the Ubuntu instructions</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Area</th><th>On the Mac</th></tr></thead>
+    <tbody>
+      <tr><td>Serial port</td><td>The XIAO appears as <code>/dev/cu.usbmodem…</code>. Find it with <code>ls /dev/cu.usbmodem*</code>. Use the <code>cu.</code> device, not <code>tty.</code>, which can hang on open. No <code>dialout</code> group step.</td></tr>
+      <tr><td>Firmware tools</td><td>Arduino IDE and ESP-IDF run natively. Build ESP-IDF projects outside <code>pixi shell</code> so the ROS environment doesn't interfere.</td></tr>
+      <tr><td>micro-ROS agent</td><td>Run it natively, not in Docker. Containers on a Mac run inside a hidden VM, and ROS 2 discovery often can't reach your native nodes from there. See section 8 for building it.</td></tr>
+      <tr><td>Starting Gazebo</td><td>The server and GUI run in separate terminals: the server through your launch file, the GUI with <code>gz sim -g</code>.</td></tr>
+      <tr><td>Gazebo sensors</td><td>Rendering-based sensors (cameras, GPU lidar) have been reported to crash Gazebo Harmonic on macOS. If TurtleBot3 crashes on load, remove its lidar from the model. The hand has no sensors.</td></tr>
+      <tr><td>Firewall</td><td>If the macOS firewall is on, allow incoming connections for the agent so the ESP32 can reach UDP port 8888.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="verify"><p><strong>When to switch to the VM:</strong> if Gazebo keeps crashing or a package you need isn't in RoboStack, move the ROS 2 side into an Ubuntu 24.04 ARM VM (UTM or Parallels). Turn on USB passthrough for the XIAO and bridged networking so the ESP32 can reach the VM's IP address. The Ubuntu commands then work as written.</p></div>
+</section>
+
+<section id="architecture">
+  <h2><span class="n">3</span>Architecture</h2>
+  <p>Both versions share the same camera, the same debounce code, the same topic, and everything on the ROS side after the topic. Only the path from the ESP32-C3 to ROS 2 changes.</p>
+
+  <h3>v1: serial bridge</h3>
+  <div class="diagram">
+<svg viewBox="0 0 660 300" role="img"><title>v1 architecture: the camera sends JSON over USB serial to the Python bridge, which publishes to the behavior node and the simulated robot.</title><defs><marker id="dm1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="d-cont" x="10" y="10" width="640" height="110" rx="12"/>
+<text class="d-s" x="24" y="30" dominant-baseline="central">XIAO Vision AI Camera</text>
+<rect class="d-teal" x="24" y="44" width="190" height="56" rx="8"/><text class="d-t" x="119.0" y="63.0" text-anchor="middle" dominant-baseline="central">OV5647</text><text class="d-s" x="119.0" y="83.0" text-anchor="middle" dominant-baseline="central">Captures frames</text>
+<rect class="d-teal" x="234" y="44" width="190" height="56" rx="8"/><text class="d-t" x="329.0" y="63.0" text-anchor="middle" dominant-baseline="central">Grove Vision AI V2</text><text class="d-s" x="329.0" y="83.0" text-anchor="middle" dominant-baseline="central">Runs gesture model</text>
+<rect class="d-cop" x="444" y="44" width="190" height="56" rx="8"/><text class="d-t" x="539.0" y="63.0" text-anchor="middle" dominant-baseline="central">XIAO ESP32-C3</text><text class="d-s" x="539.0" y="83.0" text-anchor="middle" dominant-baseline="central">Arduino + debouncer</text>
+<line class="d-arr" x1="216" y1="72" x2="230" y2="72" marker-end="url(#dm1)"/>
+<line class="d-arr" x1="426" y1="72" x2="440" y2="72" marker-end="url(#dm1)"/>
+<line class="d-arr" x1="539" y1="102" x2="539" y2="186" marker-end="url(#dm1)"/>
+<text class="d-l" x="529" y="136" text-anchor="end" dominant-baseline="central">USB serial, JSON lines</text>
+<rect class="d-cont" x="10" y="150" width="640" height="140" rx="12"/>
+<text class="d-s" x="24" y="170" dominant-baseline="central">Mac, ROS 2 Jazzy</text>
+<rect class="d-cop" x="444" y="190" width="190" height="56" rx="8"/><text class="d-t" x="539.0" y="209.0" text-anchor="middle" dominant-baseline="central">gesture_bridge</text><text class="d-s" x="539.0" y="229.0" text-anchor="middle" dominant-baseline="central">Python node on the Mac</text>
+<rect class="d-box" x="234" y="190" width="190" height="56" rx="8"/><text class="d-t" x="329.0" y="209.0" text-anchor="middle" dominant-baseline="central">gesture_behavior</text><text class="d-s" x="329.0" y="229.0" text-anchor="middle" dominant-baseline="central">Mapping, 2 s watchdog</text>
+<rect class="d-box" x="24" y="190" width="190" height="56" rx="8"/><text class="d-t" x="119.0" y="209.0" text-anchor="middle" dominant-baseline="central">Simulated robot</text><text class="d-s" x="119.0" y="229.0" text-anchor="middle" dominant-baseline="central">turtlesim, RViz2, Gazebo</text>
+<line class="d-arr" x1="440" y1="218" x2="426" y2="218" marker-end="url(#dm1)"/>
+<line class="d-arr" x1="230" y1="218" x2="216" y2="218" marker-end="url(#dm1)"/>
+<text class="d-l" x="433" y="264" text-anchor="middle" dominant-baseline="central">/gesture/event</text>
+<text class="d-l" x="223" y="264" text-anchor="middle" dominant-baseline="central">Velocity or joint commands</text>
+</svg>
+  </div>
+
+  <h3>v2: micro-ROS</h3>
+  <div class="diagram">
+<svg viewBox="0 0 660 300" role="img"><title>v2 architecture: the camera publishes over Wi-Fi to the micro-ROS agent, which feeds the same behavior node and simulated robot.</title><defs><marker id="dm2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="d-cont" x="10" y="10" width="640" height="110" rx="12"/>
+<text class="d-s" x="24" y="30" dominant-baseline="central">XIAO Vision AI Camera</text>
+<rect class="d-teal" x="24" y="44" width="190" height="56" rx="8"/><text class="d-t" x="119.0" y="63.0" text-anchor="middle" dominant-baseline="central">OV5647</text><text class="d-s" x="119.0" y="83.0" text-anchor="middle" dominant-baseline="central">Captures frames</text>
+<rect class="d-teal" x="234" y="44" width="190" height="56" rx="8"/><text class="d-t" x="329.0" y="63.0" text-anchor="middle" dominant-baseline="central">Grove Vision AI V2</text><text class="d-s" x="329.0" y="83.0" text-anchor="middle" dominant-baseline="central">Runs gesture model</text>
+<rect class="d-cop" x="444" y="44" width="190" height="56" rx="8"/><text class="d-t" x="539.0" y="63.0" text-anchor="middle" dominant-baseline="central">XIAO ESP32-C3</text><text class="d-s" x="539.0" y="83.0" text-anchor="middle" dominant-baseline="central">ESP-IDF + micro-ROS</text>
+<line class="d-arr" x1="216" y1="72" x2="230" y2="72" marker-end="url(#dm2)"/>
+<line class="d-arr" x1="426" y1="72" x2="440" y2="72" marker-end="url(#dm2)"/>
+<line class="d-arr" x1="539" y1="102" x2="539" y2="186" marker-end="url(#dm2)"/>
+<text class="d-l" x="529" y="136" text-anchor="end" dominant-baseline="central">Wi-Fi UDP 8888, XRCE-DDS</text>
+<rect class="d-cont" x="10" y="150" width="640" height="140" rx="12"/>
+<text class="d-s" x="24" y="170" dominant-baseline="central">Mac, ROS 2 Jazzy</text>
+<rect class="d-cop" x="444" y="190" width="190" height="56" rx="8"/><text class="d-t" x="539.0" y="209.0" text-anchor="middle" dominant-baseline="central">micro-ROS agent</text><text class="d-s" x="539.0" y="229.0" text-anchor="middle" dominant-baseline="central">Runs natively on the Mac</text>
+<rect class="d-box" x="234" y="190" width="190" height="56" rx="8"/><text class="d-t" x="329.0" y="209.0" text-anchor="middle" dominant-baseline="central">gesture_behavior</text><text class="d-s" x="329.0" y="229.0" text-anchor="middle" dominant-baseline="central">Mapping, 2 s watchdog</text>
+<rect class="d-box" x="24" y="190" width="190" height="56" rx="8"/><text class="d-t" x="119.0" y="209.0" text-anchor="middle" dominant-baseline="central">Simulated robot</text><text class="d-s" x="119.0" y="229.0" text-anchor="middle" dominant-baseline="central">turtlesim, RViz2, Gazebo</text>
+<line class="d-arr" x1="440" y1="218" x2="426" y2="218" marker-end="url(#dm2)"/>
+<line class="d-arr" x1="230" y1="218" x2="216" y2="218" marker-end="url(#dm2)"/>
+<text class="d-l" x="433" y="264" text-anchor="middle" dominant-baseline="central">/gesture/event</text>
+<text class="d-l" x="223" y="264" text-anchor="middle" dominant-baseline="central">Velocity or joint commands</text>
+</svg>
+  </div>
+
+  <h3>What changes between versions</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Part</th><th>v1</th><th>v2</th></tr></thead>
+    <tbody>
+      <tr><td>Device framework</td><td>Arduino</td><td>ESP-IDF + FreeRTOS tasks</td></tr>
+      <tr><td>Vision AI V2 client</td><td><code>Seeed_Arduino_SSCMA</code></td><td>Your own AT client over UART</td></tr>
+      <tr><td>Debounce logic</td><td colspan="2">Same C++ files in <code>firmware/common/</code></td></tr>
+      <tr><td>Device to host</td><td>USB serial, JSON lines</td><td>Wi-Fi UDP to the micro-ROS agent</td></tr>
+      <tr><td>Publisher of <code>/gesture/event</code></td><td><code>gesture_bridge</code> on the PC</td><td>The ESP32-C3 itself</td></tr>
+      <tr><td>Timestamp source</td><td>PC receive time</td><td>Device time, synced with the agent</td></tr>
+      <tr><td>Agent location</td><td>n/a</td><td>Runs natively on the Mac</td></tr>
+      <tr><td>Behavior, simulation, topic, message</td><td colspan="2">Unchanged</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="contract">
+  <h2><span class="n">4</span>Interface contract</h2>
+  <p>This is the one thing both versions must agree on. Any change to it goes into firmware v1, firmware v2, and the bridge in the same commit.</p>
+  <div class="contract">
+    <div class="table-wrap"><table>
+      <tbody>
+        <tr><td>Topic</td><td><code>/gesture/event</code></td></tr>
+        <tr><td>Type</td><td><code>gesture_msgs/msg/Gesture</code></td></tr>
+        <tr><td>QoS</td><td>Reliable, keep last 10, volatile</td></tr>
+        <tr><td>When published</td><td>Immediately when the confirmed gesture changes, plus a heartbeat with the current state every 1 s</td></tr>
+        <tr><td><code>frame_id</code></td><td><code>gesture_camera</code></td></tr>
+        <tr><td>Stamp</td><td><span class="tag v1">v1</span> PC receive time &nbsp; <span class="tag v2">v2</span> device time after syncing with the agent</td></tr>
+      </tbody>
+    </table></div>
+    <p class="file">ros2_ws/src/gesture_msgs/msg/Gesture.msg</p>
+<pre><code>uint8 PAPER=0
+uint8 ROCK=1
+uint8 SCISSORS=2
+uint8 NONE=255
+
+std_msgs/Header header
+uint8 gesture        # one of the constants above
+float32 confidence   # 0.0 to 1.0
+float32 bbox_cx      # normalized box center, 0.0 to 1.0
+float32 bbox_cy</code></pre>
+  </div>
+  <p>The heartbeat makes <code>ros2 topic hz</code> meaningful, lets late subscribers learn the current state, and gives the behavior node something to time out on. An integer gesture ID avoids string buffers on the microcontroller. The header still has a <code>frame_id</code> string, so v2 assigns it once at startup (see 6.6).</p>
+  <p class="file">gesture_msgs/CMakeLists.txt (excerpt)</p>
+<pre><code>find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Gesture.msg"
+  DEPENDENCIES std_msgs
+)</code></pre>
+  <p>In <code>package.xml</code>, add <code>rosidl_default_generators</code> as a buildtool dependency, <code>std_msgs</code> as a dependency, <code>rosidl_default_runtime</code> as an exec dependency, and <code>&lt;member_of_group&gt;rosidl_interface_packages&lt;/member_of_group&gt;</code>.</p>
+</section>
+
+<section id="links">
+  <h2><span class="n">5</span>Links and wire formats</h2>
+
+  <h3>Camera link (both versions)</h3>
+  <p>The Vision AI V2 talks to the ESP32-C3 over a hardware UART through the XIAO header at 921600 baud, which is the SSCMA default and too fast for software serial. v1 uses this UART too, instead of the library's I2C default, so the physical link is identical when you move to v2.</p>
+  <p>Inference runs continuously after one command:</p>
+<pre><code>AT+INVOKE=-1,0,1\r</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Argument</th><th>Value</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>N_TIMES</td><td><code>-1</code></td><td>Run until told to stop</td></tr>
+      <tr><td>DIFFERED</td><td><code>0</code></td><td>Send every frame, because the debouncer counts consecutive frames</td></tr>
+      <tr><td>RESULT_ONLY</td><td><code>1</code></td><td>Leave out the base64 image to keep the link light</td></tr>
+    </tbody>
+  </table></div>
+  <p>Each reply is framed as <code>\r</code>, a JSON body, then <code>\n</code>. Inference results arrive as event replies (<code>"type": 1</code>, <code>"name": "INVOKE"</code>). Each box is an array of <code>[x, y, w, h, score, target]</code>, with score from 0 to 100 and target as the model's class index. Confirmed on hardware: <code>x</code> and <code>y</code> are the box <strong>center</strong>, reported in the 240&times;240 preview frame rather than the model's 192&times;192 input, because the device rescales boxes before sending them. Neither the AT spec nor the Seeed wiki states this, and Seeed's own <code>camera_web_server</code> example is self-contradictory about it, so it was measured from a known preview frame.</p>
+<pre><code>{"type":1,"name":"INVOKE","code":0,
+ "data":{"count":8,"perf":[8,365,0],"boxes":[[87,83,77,65,70,1]]}}</code></pre>
+  <p>v1 gets these fields through the SSCMA library. v2 parses them itself.</p>
+
+  <h3>Host link, v1</h3>
+  <p>USB serial (CDC) to <code>/dev/cu.usbmodem…</code> on the Mac, one JSON object per line. Field names are short to keep lines small.</p>
+<pre><code>{"g":1,"c":0.87,"x":0.512,"y":0.430,"t":48213}</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>g</code></td><td>Gesture constant from the message definition (0, 1, 2, or 255)</td></tr>
+      <tr><td><code>c</code></td><td>Confidence, 0 to 1</td></tr>
+      <tr><td><code>x</code>, <code>y</code></td><td>Normalized box center</td></tr>
+      <tr><td><code>t</code></td><td>Device <code>millis()</code>, for debugging only</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Host link, v2</h3>
+  <p>Wi-Fi to the Mac, UDP port 8888, XRCE-DDS between the device and the micro-ROS agent running natively on the Mac. The agent then presents the device as a normal ROS 2 node. The firmware needs the Mac's IP address, so reserve it in your router.</p>
+</section>
+
+<section id="components">
+  <h2><span class="n">6</span>Components</h2>
+
+  <h3>6.1 Shared debouncer (C++)</h3>
+  <p>Detection models flicker between classes on transitional frames, so the device only reports a gesture after it has been seen for several frames in a row. This code uses no Arduino or ESP-IDF calls, so both firmware versions compile the same files and you can unit-test it on your PC.</p>
+  <p class="file">firmware/common/gesture_debouncer.h</p>
+<pre><code>#pragma once
+#include &lt;cstdint&gt;
+
+namespace gesture {
+
+enum class Id : uint8_t { Paper = 0, Rock = 1, Scissors = 2, None = 255 };
+
+struct Detection {
+  bool valid;           // false when the frame had no box
+  uint8_t model_class;  // raw class index from the model
+  float score;          // 0 to 1
+  float cx, cy;         // normalized box center
+};
+
+struct Event {
+  Id gesture;
+  float confidence;
+  float cx, cy;
+};
+
+struct Config {
+  uint8_t frames_to_confirm = 5;
+  float min_score = 0.60f;
+  uint32_t none_timeout_ms = 500;
+};
+
+class Debouncer {
+ public:
+  explicit Debouncer(const Config&amp; cfg) : cfg_(cfg) {}
+  // Call once per inference frame. Returns true and fills `out`
+  // only when the confirmed gesture changes.
+  bool update(const Detection&amp; det, uint32_t now_ms, Event&amp; out);
+  Id current() const { return state_; }
+
+ private:
+  static Id map_class(uint8_t model_class);
+  Config cfg_;
+  Id state_ = Id::None;
+  Id candidate_ = Id::None;
+  uint8_t streak_ = 0;
+  uint32_t last_seen_ms_ = 0;
+};
+
+}  // namespace gesture</code></pre>
+  <p class="file">firmware/common/gesture_debouncer.cpp</p>
+<pre><code>#include "gesture_debouncer.h"
+
+namespace gesture {
+
+// The only place that knows the model's class order.
+Id Debouncer::map_class(uint8_t model_class) {
+  static const Id kMap[] = {Id::Paper, Id::Rock, Id::Scissors};
+  return model_class &lt; 3 ? kMap[model_class] : Id::None;
+}
+
+bool Debouncer::update(const Detection&amp; det, uint32_t now_ms, Event&amp; out) {
+  // Unsigned subtraction stays correct across millis() wraparound.
+  const bool gap = now_ms - last_seen_ms_ &gt; cfg_.none_timeout_ms;
+  if (gap) {
+    // Frames on either side of a long gap are never consecutive.
+    candidate_ = Id::None;
+    streak_ = 0;
+  }
+
+  if (det.valid &amp;&amp; det.score &gt;= cfg_.min_score) {
+    Id id = map_class(det.model_class);
+    last_seen_ms_ = now_ms;
+    if (id == candidate_) {
+      if (streak_ &lt; 255) ++streak_;
+    } else {
+      candidate_ = id;
+      streak_ = 1;
+    }
+    if (streak_ &gt;= cfg_.frames_to_confirm &amp;&amp; id != state_) {
+      state_ = id;
+      out = {id, det.score, det.cx, det.cy};
+      return true;
+    }
+    return false;
+  }
+
+  // Frames without a usable box don't break the streak on their own.
+  if (gap &amp;&amp; state_ != Id::None) {
+    state_ = Id::None;
+    out = {Id::None, 0.0f, 0.0f, 0.0f};
+    return true;
+  }
+  return false;
+}
+
+}  // namespace gesture</code></pre>
+  <p>A gap longer than <code>none_timeout_ms</code> clears any partial streak, not only a confirmed gesture, so frames on either side of a dropout never count as consecutive. A single missed frame still keeps the streak, which is what lets the count survive normal detector flicker.</p>
+
+  <h3>6.2 Firmware v1 (Arduino)</h3>
+  <p>Two installs cover this sketch: the <strong>esp32</strong> board package by Espressif Systems, which is in the default Boards Manager list so no extra URL is needed, and the <strong>Seeed Arduino SSCMA</strong> library, accepting its <code>ArduinoJson</code> dependency. Select board <code>XIAO_ESP32C3</code> and leave <strong>USB CDC On Boot</strong> enabled, which is this board's default, so <code>Serial</code> goes over USB and UART0 stays free for the Vision AI V2. Symlink the two <code>common/</code> files into the sketch folder instead of copying them, so v1 and v2 keep one source of truth: the IDE's builder follows symlinks and lists them as tabs. Flash over USB on the <code>/dev/cu.usbmodem…</code> port; the IDE calls the board "Unconfirmed", which is normal for the C3's native USB, so pick it by hand.</p>
+  <p class="file">firmware/v1_arduino/gesture_camera_v1/gesture_camera_v1.ino</p>
+<pre><code>#include &lt;HardwareSerial.h&gt;
+#include &lt;Seeed_Arduino_SSCMA.h&gt;
+#include "gesture_debouncer.h"
+
+// Boxes come back in the 240x240 preview frame, not the model's 192x192 input.
+constexpr float kImgW = 240.0f;
+constexpr float kImgH = 240.0f;
+constexpr uint32_t kHeartbeatMs = 1000;
+
+// 1 also prints every raw box, to confirm the score scale and the class order.
+#define LOG_RAW_BOXES 0
+
+HardwareSerial atSerial(0);  // UART to the Vision AI V2 through the XIAO header
+SSCMA AI;
+gesture::Debouncer deb(gesture::Config{});
+gesture::Event last{gesture::Id::None, 0.0f, 0.0f, 0.0f};
+uint32_t lastSentMs = 0;
+
+void emit(const gesture::Event&amp; e) {
+  Serial.printf("{\"g\":%u,\"c\":%.2f,\"x\":%.3f,\"y\":%.3f,\"t\":%lu}\n",
+                static_cast&lt;unsigned&gt;(e.gesture), e.confidence,
+                e.cx, e.cy, static_cast&lt;unsigned long&gt;(millis()));
+  lastSentMs = millis();
+}
+
+void setup() {
+  Serial.begin(115200);
+  if (!AI.begin(&amp;atSerial)) Serial.println("SSCMA begin failed");
+}
+
+void loop() {
+  // The library builds AT+INVOKE=&lt;times&gt;,&lt;!filter&gt;,&lt;filter&gt;, so filter=true
+  // sends AT+INVOKE=1,0,1: every frame, no image.
+  if (AI.invoke(1, true, false) != 0) return;  // 0 means success
+
+  gesture::Detection det{false, 0, 0.0f, 0.0f, 0.0f};
+  for (auto&amp; b : AI.boxes()) {                    // keep the highest-scoring box
+#if LOG_RAW_BOXES
+    Serial.printf("raw x=%u y=%u w=%u h=%u score=%u target=%u\n", b.x, b.y, b.w,
+                  b.h, b.score, b.target);
+#endif
+    float s = b.score / 100.0f;
+    if (!det.valid || s &gt; det.score) {
+      // x, y are already the box center.
+      det = {true, static_cast&lt;uint8_t&gt;(b.target), s, b.x / kImgW, b.y / kImgH};
+    }
+  }
+
+  gesture::Event ev;
+  if (deb.update(det, millis(), ev)) {
+    last = ev;
+    emit(last);
+  } else if (millis() - lastSentMs &gt;= kHeartbeatMs) {
+    emit(last);                                   // heartbeat with current state
+  }
+}</code></pre>
+  <p><strong>The <code>invoke()</code> arguments are a trap.</strong> The library builds the command as <code>AT+INVOKE=&lt;times&gt;,&lt;!filter&gt;,&lt;filter&gt;</code>, so its second argument sets <code>DIFFERED</code> inverted and <code>RESULT_ONLY</code> directly. Passing <code>false</code> sends <code>AT+INVOKE=1,1,0</code>, which tells the camera to reply only when the result <em>changes</em> and to include the base64 image: that starves the debouncer of the consecutive frames it counts, and floods the UART. <code>AI.invoke(1, true, false)</code> sends <code>AT+INVOKE=1,0,1</code>, which is the row in section 5. Seeed's own <code>inference_uart</code> example passes this argument as <code>IMAGE_SHOW</code>, which reads backwards from what it does.</p>
+  <div class="verify"><p><strong>Confirmed on hardware, 2026-09-19:</strong> boxes report the <em>center</em> in a 240&times;240 frame, scores arrive as 0 to 100 (53 to 88 observed), and the class order matches <code>map_class()</code> as written, paper 0, rock 1, scissors 2. The camera also applies its own confidence threshold, set from SenseCraft with <code>AT+TSCORE</code> and kept in flash across power cycles. With that at 50, the debouncer's <code>min_score</code> of 0.60 is the gate that actually decides.</p></div>
+
+  <h3>6.3 Python bridge (v1 only)</h3>
+  <p>Reads JSON lines, validates them, and publishes <code>Gesture</code> messages. It runs inside <code>pixi shell</code> on the Mac. It reconnects if the camera is unplugged and counts bad lines rather than crashing.</p>
+  <p class="file">ros2_ws/src/gesture_bridge/gesture_bridge/serial_bridge.py</p>
+<pre><code>import json
+import threading
+import time
+
+import rclpy
+import serial
+from rclpy.node import Node
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+
+from gesture_msgs.msg import Gesture
+
+GESTURE_QOS = QoSProfile(
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10,
+    reliability=ReliabilityPolicy.RELIABLE,
+)
+
+
+class SerialBridge(Node):
+    def __init__(self):
+        super().__init__('gesture_bridge')
+        # Find yours with: ls /dev/cu.usbmodem*
+        self.port = self.declare_parameter('port', '/dev/cu.usbmodem101').value
+        self.baud = self.declare_parameter('baud', 115200).value
+        self.frame_id = self.declare_parameter('frame_id', 'gesture_camera').value
+        self.pub = self.create_publisher(Gesture, '/gesture/event', GESTURE_QOS)
+        self.bad_lines = 0
+        threading.Thread(target=self._read_loop, daemon=True).start()
+
+    def _read_loop(self):
+        while rclpy.ok():
+            try:
+                with serial.Serial(self.port, self.baud, timeout=1.0) as ser:
+                    self.get_logger().info(f'Connected to {self.port}')
+                    while rclpy.ok():
+                        raw = ser.readline()
+                        if raw.endswith(b'\n'):
+                            self._handle(raw)
+            except serial.SerialException as exc:
+                self.get_logger().warn(f'Serial error: {exc}. Retrying in 2 s.')
+                time.sleep(2.0)
+
+    def _handle(self, raw):
+        try:
+            data = json.loads(raw)
+            gesture = int(data['g'])
+            if gesture not in (0, 1, 2, 255):   # PAPER, ROCK, SCISSORS, NONE
+                return self._drop(raw)
+            msg = Gesture()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.frame_id = self.frame_id
+            msg.gesture = gesture
+            msg.confidence = float(data['c'])
+            msg.bbox_cx = float(data['x'])
+            msg.bbox_cy = float(data['y'])
+        except (ValueError, KeyError, TypeError):
+            return self._drop(raw)
+        self.pub.publish(msg)
+
+    def _drop(self, raw):
+        self.bad_lines += 1
+        self.get_logger().debug(f'Dropped line {raw!r} ({self.bad_lines} total)')
+
+
+def main():
+    rclpy.init()
+    node = SerialBridge()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()</code></pre>
+  <div class="verify"><p><strong>Corrected on this build, 2026-09-23:</strong> the plan assumed the generated message class rejects out-of-range values, such as a gesture of 300, with an <code>AssertionError</code>. On RoboStack Jazzy it does not: <code>msg.gesture = 300</code> stores 300 with no check, and the value silently wraps at serialization (300 becomes 44), which would reach the behavior node as a bogus gesture. So the bridge validates the range itself, as above, and <code>AssertionError</code> is dropped from the <code>except</code>. In the shipped code this parsing lives in a small <code>gesture_bridge/parser.py</code> with no ROS imports, so it can be unit-tested with plain Python; the node just turns a parsed line into a message and publishes it.</p></div>
+
+  <h3>6.4 Behavior node (C++)</h3>
+  <p>Written with <code>rclcpp</code> in an <code>ament_cmake</code> package. It subscribes to <code>/gesture/event</code>, acts only when the gesture changes, and stops the robot if messages stop arriving.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Responsibility</th><th>Design</th></tr></thead>
+    <tbody>
+      <tr><td>Change detection</td><td>Keep <code>active_gesture_</code>. Heartbeats with the same value do nothing except refresh the watchdog.</td></tr>
+      <tr><td>Watchdog</td><td>A 5 Hz wall timer sets the active gesture to <code>NONE</code> if nothing has arrived for <code>watchdog_timeout_s</code> (2 s, or two missed heartbeats).</td></tr>
+      <tr><td>Velocity output</td><td>A 10 Hz timer publishes the velocity for the active gesture on <code>cmd_vel_topic</code>. <code>NONE</code> publishes zero. The topic is a parameter so turtlesim and TurtleBot3 use the same code.</td></tr>
+      <tr><td>Hand output</td><td>On change, publish one <code>JointTrajectory</code> point to <code>/hand_controller/joint_trajectory</code>. <code>NONE</code> holds the last pose.</td></tr>
+      <tr><td>Mapping</td><td>Loaded from a YAML file per robot, so remapping gestures needs no rebuild.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="file">ros2_ws/src/gesture_behavior/config/turtlesim.yaml</p>
+<pre><code>gesture_behavior:
+  ros__parameters:
+    robot: turtlesim                  # turtlesim, turtlebot3, or hand
+    cmd_vel_topic: /turtle1/cmd_vel
+    watchdog_timeout_s: 2.0
+    velocities:
+      rock:     {linear: 0.0, angular: 0.0}
+      paper:    {linear: 1.0, angular: 0.0}
+      scissors: {linear: 0.0, angular: 1.5}</code></pre>
+  <p><code>turtlebot3.yaml</code> is the same shape with <code>cmd_vel_topic: /cmd_vel</code> and gentler speeds (about 0.15 linear, 0.6 angular). <code>hand.yaml</code> sets <code>robot: hand</code> and <code>move_time_s: 0.8</code>.</p>
+  <div class="verify"><p><strong>Check:</strong> turtlesim takes <code>geometry_msgs/Twist</code>. Once the TurtleBot3 simulation is running, check <code>ros2 topic info /cmd_vel</code>, because Jazzy setups may expect <code>geometry_msgs/TwistStamped</code>. Support both types behind a parameter.</p></div>
+  <div class="verify"><p><strong>Done 2026-09-23 (phase 3, turtlesim).</strong> The node ships with the change detection, 10 Hz velocity timer, and 5 Hz watchdog above, publishing <code>Twist</code> from <code>turtlesim.yaml</code>. Hand <code>JointTrajectory</code> output and the <code>TwistStamped</code> option are deferred to phase 4, where a sim that needs them exists to test against.</p></div>
+  <div class="verify"><p><strong>macOS build trap.</strong> On RoboStack (conda), a C++ node that uses a message package aborts at startup with <code>symbol not found in flat namespace '_PyExc_RuntimeError'</code>. The message package's CMake targets (both <code>ament_target_dependencies</code> and <code>${&lt;pkg&gt;_TARGETS}</code>) transitively pull in its <code>rosidl_generator_py</code> library, which loads eagerly but needs libpython, which a standalone C++ binary does not link. Fix in <code>CMakeLists.txt</code>: link only the <code>&lt;pkg&gt;::&lt;pkg&gt;__rosidl_typesupport_cpp</code> targets and add <code>target_link_options(&lt;node&gt; PRIVATE -Wl,-dead_strip_dylibs)</code>, which drops the unused Python libraries from the load commands. The middleware still <code>dlopen</code>s the real typesupport at runtime, so it is safe, and it matches how the prebuilt RoboStack binaries are linked. This applies to every C++ node, so phase 4's additions need the same two lines.</p></div>
+
+  <h3>6.5 Simulation</h3>
+  <p>Simulation comes in two stages so the ROS 2 side works before Gazebo is involved. Your controllers and behavior node are the same in both.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Stage</th><th>Mobile robot</th><th>Hand</th></tr></thead>
+    <tbody>
+      <tr><td>A: no Gazebo (phases 3 and 4)</td><td><code>turtlesim</code></td><td><code>ros2_control</code> mock hardware, <code>robot_state_publisher</code>, RViz2</td></tr>
+      <tr><td>B: Gazebo (after phase 4)</td><td>TurtleBot3 from <code>turtlebot3_gazebo</code></td><td>Same hand with <code>gz_ros2_control</code></td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Hand model.</strong> <code>simple_hand.urdf.xacro</code> in <code>gesture_sim</code>: a palm fixed to the world, five fingers, and two revolute joints per finger (<code>thumb_j1</code>, <code>thumb_j2</code>, <code>index_j1</code>, and so on), each with a position command interface. One xacro argument picks the hardware plugin, so switching to Gazebo is a launch argument.</p>
+  <p class="file">gesture_sim/urdf/simple_hand.urdf.xacro (excerpt)</p>
+<pre><code>&lt;xacro:arg name="use_gazebo" default="false"/&gt;
+
+&lt;ros2_control name="hand" type="system"&gt;
+  &lt;hardware&gt;
+    &lt;xacro:if value="$(arg use_gazebo)"&gt;
+      &lt;plugin&gt;gz_ros2_control/GazeboSimSystem&lt;/plugin&gt;
+    &lt;/xacro:if&gt;
+    &lt;xacro:unless value="$(arg use_gazebo)"&gt;
+      &lt;plugin&gt;mock_components/GenericSystem&lt;/plugin&gt;
+    &lt;/xacro:unless&gt;
+  &lt;/hardware&gt;
+  &lt;joint name="index_j1"&gt;
+    &lt;command_interface name="position"/&gt;
+    &lt;state_interface name="position"/&gt;
+  &lt;/joint&gt;
+  &lt;!-- ...the other nine joints --&gt;
+&lt;/ros2_control&gt;
+
+&lt;xacro:if value="$(arg use_gazebo)"&gt;
+  &lt;gazebo&gt;
+    &lt;plugin filename="gz_ros2_control-system"
+            name="gz_ros2_control::GazeboSimROS2ControlPlugin"&gt;
+      &lt;parameters&gt;$(find gesture_sim)/config/hand_controllers.yaml&lt;/parameters&gt;
+    &lt;/plugin&gt;
+  &lt;/gazebo&gt;
+&lt;/xacro:if&gt;</code></pre>
+  <p>In stage A, the launch file starts <code>robot_state_publisher</code>, <code>ros2_control_node</code> with the controller YAML, the controller spawners, and RViz2. In stage B, Gazebo loads the controller manager through the plugin, so <code>ros2_control_node</code> is left out.</p>
+  <p class="file">ros2_ws/src/gesture_sim/config/hand_controllers.yaml</p>
+<pre><code>controller_manager:
+  ros__parameters:
+    update_rate: 100
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    hand_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+hand_controller:
+  ros__parameters:
+    joints: [thumb_j1, thumb_j2, index_j1, index_j2, middle_j1, middle_j2,
+             ring_j1, ring_j2, pinky_j1, pinky_j2]
+    command_interfaces: [position]
+    state_interfaces: [position]</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Gesture</th><th>Hand pose (joint angles, rad)</th></tr></thead>
+    <tbody>
+      <tr><td>Rock</td><td>All joints about 1.4 (every finger curled)</td></tr>
+      <tr><td>Paper</td><td>All joints 0.0 (every finger straight)</td></tr>
+      <tr><td>Scissors</td><td>Index and middle 0.0, thumb, ring, and pinky about 1.4</td></tr>
+    </tbody>
+  </table></div>
+  <p>Keep the poses in a YAML file next to the controller config so you can tune them without rebuilding.</p>
+  <p><strong>Gazebo on the Mac.</strong> Start the server from your launch file and the GUI separately:</p>
+<pre><code># terminal 1 (pixi shell): server, robot, controllers, behavior
+ros2 launch gesture_bringup bringup.launch.py robot:=hand use_gazebo:=true
+
+# terminal 2 (pixi shell): Gazebo GUI
+gz sim -g</code></pre>
+
+  <h3>6.6 Firmware v2 (ESP-IDF + micro-ROS)</h3>
+  <p>Two FreeRTOS tasks keep camera parsing and networking apart, so a slow Wi-Fi moment never makes the device miss frames.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Task</th><th>Job</th><th>Talks to</th></tr></thead>
+    <tbody>
+      <tr><td><code>vision_task</code></td><td>Starts inference, frames replies, parses boxes with cJSON, runs the shared debouncer, re-arms inference if replies stop for 2 s</td><td>UART1 in, event queue out</td></tr>
+      <tr><td><code>ros_task</code></td><td>Manages the agent connection, publishes queued events immediately, sends the 1 s heartbeat from an <code>rclc</code> timer</td><td>Event queue in, Wi-Fi out</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="diagram">
+<svg viewBox="0 0 660 220" role="img"><title>v2 firmware tasks: the Vision AI V2 feeds vision_task, which queues debounced events for ros_task, which publishes to the micro-ROS agent.</title><defs><marker id="dm3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="d-teal" x="24" y="14" width="190" height="50" rx="8"/><text class="d-t" x="119.0" y="30.0" text-anchor="middle" dominant-baseline="central">Grove Vision AI V2</text><text class="d-s" x="119.0" y="50.0" text-anchor="middle" dominant-baseline="central">AT events, UART1</text>
+<rect class="d-teal" x="446" y="14" width="190" height="50" rx="8"/><text class="d-t" x="541.0" y="30.0" text-anchor="middle" dominant-baseline="central">micro-ROS agent</text><text class="d-s" x="541.0" y="50.0" text-anchor="middle" dominant-baseline="central">Wi-Fi UDP 8888</text>
+<rect class="d-cont" x="10" y="90" width="640" height="118" rx="12"/>
+<text class="d-s" x="24" y="192" dominant-baseline="central">ESP32-C3 firmware, v2</text>
+<rect class="d-cop" x="24" y="110" width="270" height="60" rx="8"/><text class="d-t" x="159.0" y="131.0" text-anchor="middle" dominant-baseline="central">vision_task</text><text class="d-s" x="159.0" y="151.0" text-anchor="middle" dominant-baseline="central">Parse, debounce, re-arm</text>
+<rect class="d-cop" x="366" y="110" width="270" height="60" rx="8"/><text class="d-t" x="501.0" y="131.0" text-anchor="middle" dominant-baseline="central">ros_task</text><text class="d-s" x="501.0" y="151.0" text-anchor="middle" dominant-baseline="central">Publish, heartbeat, reconnect</text>
+<line class="d-arr" x1="119" y1="66" x2="119" y2="106" marker-end="url(#dm3)"/>
+<line class="d-arr" x1="541" y1="106" x2="541" y2="68" marker-end="url(#dm3)"/>
+<line class="d-arr" x1="300" y1="140" x2="360" y2="140" marker-end="url(#dm3)"/>
+<text class="d-l" x="330" y="122" text-anchor="middle" dominant-baseline="central">Queue</text>
+</svg>
+  </div>
+
+  <p><strong>Agent connection.</strong> Follow the standard micro-ROS reconnection pattern, so the device survives the agent restarting or Wi-Fi dropping:</p>
+  <div class="diagram">
+<svg viewBox="0 0 660 120" role="img"><title>Agent connection states: waiting, agent found, connected, disconnected, then back to waiting.</title><defs><marker id="dm4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="d-box" x="12" y="20" width="140" height="44" rx="8"/><text class="d-t" x="82" y="42" text-anchor="middle" dominant-baseline="central">Waiting</text><rect class="d-box" x="177" y="20" width="140" height="44" rx="8"/><text class="d-t" x="247" y="42" text-anchor="middle" dominant-baseline="central">Agent found</text><rect class="d-box" x="342" y="20" width="140" height="44" rx="8"/><text class="d-t" x="412" y="42" text-anchor="middle" dominant-baseline="central">Connected</text><rect class="d-box" x="507" y="20" width="140" height="44" rx="8"/><text class="d-t" x="577" y="42" text-anchor="middle" dominant-baseline="central">Disconnected</text>
+<line class="d-arr" x1="154" y1="42" x2="173" y2="42" marker-end="url(#dm4)"/>
+<line class="d-arr" x1="319" y1="42" x2="338" y2="42" marker-end="url(#dm4)"/>
+<line class="d-arr" x1="484" y1="42" x2="503" y2="42" marker-end="url(#dm4)"/>
+<path class="d-arr" d="M577 66 L577 90 L82 90 L82 68" marker-end="url(#dm4)"/>
+<text class="d-l" x="330" y="106" text-anchor="middle" dominant-baseline="central">Ping fails, entities destroyed</text>
+</svg>
+  </div>
+  <p class="caption">Use <code>rmw_uros_ping_agent()</code> to test the link in each state.</p>
+
+  <p class="file">firmware/v2_espidf/main/at_client.cpp (excerpt)</p>
+<pre><code>static const char kInvoke[] = "AT+INVOKE=-1,0,1\r";
+static constexpr size_t kMaxReply = 4096;
+
+void vision_task(void*) {
+  uart_write_bytes(UART_NUM_1, kInvoke, sizeof(kInvoke) - 1);
+  std::string line;
+  uint8_t byte;
+  for (;;) {
+    if (uart_read_bytes(UART_NUM_1, &amp;byte, 1, pdMS_TO_TICKS(50)) != 1) {
+      rearm_if_stalled();                 // AT+BREAK, then kInvoke again
+      continue;
+    }
+    if (byte == '\r') { line.clear(); continue; }   // start of a reply
+    if (byte != '\n') {
+      if (line.size() &lt; kMaxReply) line.push_back(static_cast&lt;char&gt;(byte));
+      continue;
+    }
+    handle_reply(line);  // parse JSON, keep INVOKE events, best box, debounce, queue
+  }
+}</code></pre>
+
+  <p class="file">firmware/v2_espidf/main/ros_link.cpp (excerpt)</p>
+<pre><code>static gesture_msgs__msg__Gesture g_msg;
+
+void init_message() {
+  gesture_msgs__msg__Gesture__init(&amp;g_msg);
+  // The header's frame_id is a string, so allocate it once here.
+  rosidl_runtime_c__String__assign(&amp;g_msg.header.frame_id, "gesture_camera");
+}
+
+void publish_event(const gesture::Event&amp; ev) {
+  int64_t ns = rmw_uros_epoch_nanos();   // valid after rmw_uros_sync_session()
+  g_msg.header.stamp.sec = static_cast&lt;int32_t&gt;(ns / 1000000000LL);
+  g_msg.header.stamp.nanosec = static_cast&lt;uint32_t&gt;(ns % 1000000000LL);
+  g_msg.gesture = static_cast&lt;uint8_t&gt;(ev.gesture);
+  g_msg.confidence = ev.confidence;
+  g_msg.bbox_cx = ev.cx;
+  g_msg.bbox_cy = ev.cy;
+  if (rcl_publish(&amp;g_pub, &amp;g_msg, nullptr) != RCL_RET_OK) {
+    ++g_publish_failures;
+  }
+}</code></pre>
+
+  <h3>v2 implementation notes</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Topic</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>UART pins</td><td>Use UART1 routed to the XIAO's D6 (TX) and D7 (RX) pins at 921600 baud. The console stays on USB, so there's no conflict.</td></tr>
+      <tr><td>micro-ROS component</td><td>Add it as a git submodule on the <code>jazzy</code> branch under <code>components/</code>, rather than from the component registry. Your custom message has to live inside the component's <code>extra_packages</code> folder, and registry downloads get regenerated.</td></tr>
+      <tr><td>Custom message</td><td><code>scripts/sync_msgs.sh</code> copies <code>ros2_ws/src/gesture_msgs</code> into <code>extra_packages/</code>. After any message change, run <code>idf.py clean-microros</code> and rebuild.</td></tr>
+      <tr><td>Wi-Fi and agent address</td><td>Set in <code>idf.py menuconfig</code> under micro-ROS Settings: your Mac's IP address and port 8888.</td></tr>
+      <tr><td>Agent</td><td>Runs natively on the Mac inside <code>pixi shell</code>, started by the bringup launch file (section 8).</td></tr>
+      <tr><td>QoS</td><td><code>rclc_publisher_init_default()</code> is reliable, which matches the bridge. Don't switch one side to best effort.</td></tr>
+      <tr><td>Time</td><td>Call <code>rmw_uros_sync_session()</code> right after connecting, then stamp with <code>rmw_uros_epoch_nanos()</code>.</td></tr>
+      <tr><td>Build hygiene</td><td>Build from a terminal outside <code>pixi shell</code>, so no ROS 2 environment is active, as the component's README advises.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="migration">
+  <h2><span class="n">7</span>Migration to micro-ROS</h2>
+  <p>Each step has a check you can see, so a problem shows up in the step that caused it. Keep the bridge running and the robot working until step M6.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Step</th><th>Work</th><th>Done when</th></tr></thead>
+    <tbody>
+      <tr><td>M1</td><td>Freeze the contract. Save the output of <code>ros2 interface show gesture_msgs/msg/Gesture</code> in <code>docs/</code> and tag the repo <code>v1.0</code>.</td><td>Tag exists and the v1 demo works from a clean checkout.</td></tr>
+      <tr><td>M2</td><td>Build the micro-ROS agent on the Mac (section 8), then flash the component's <code>int32_publisher</code> example to the ESP32-C3 over Wi-Fi.</td><td><code>ros2 topic echo</code> shows the counter rising.</td></tr>
+      <tr><td>M3</td><td>Build <code>gesture_msgs</code> into micro-ROS and publish a hard-coded <code>Gesture</code> once per second.</td><td><code>ros2 topic echo /gesture/event</code> shows the same fields as v1.</td></tr>
+      <tr><td>M4</td><td>Write the AT client. First log raw replies to the USB console, then parsed boxes.</td><td>Parsed boxes match what v1 reports for the same hand in the same lighting.</td></tr>
+      <tr><td>M5</td><td>Wire in the shared debouncer, the heartbeat timer, time sync, and the reconnection state machine.</td><td><code>ros2 topic hz /gesture/event</code> shows about 1 Hz at rest, with extra messages on each gesture change.</td></tr>
+      <tr><td>M6</td><td>Swap: launch with <code>transport:=microros</code>. Behavior and simulation are untouched.</td><td>The acceptance test in section 10 passes with the same results as v1.</td></tr>
+      <tr><td>M7</td><td>Run the benchmarks and write up v1 vs v2.</td><td>Results table filled in.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Rollback.</strong> The v1 sketch and the bridge stay in the repo. Going back takes one flash and <code>transport:=serial</code>.</p>
+</section>
+
+<section id="repo">
+  <h2><span class="n">8</span>Repo and launch</h2>
+<pre><code>gesture-robot/
+├── pixi.toml                    # RoboStack environment for the Mac
+├── firmware/
+│   ├── common/                  # gesture_debouncer.h/.cpp, shared by v1 and v2
+│   ├── v1_arduino/gesture_camera_v1/
+│   └── v2_espidf/
+│       ├── main/                # app_main.cpp, at_client.cpp, ros_link.cpp
+│       └── components/micro_ros_espidf_component/   # submodule, jazzy branch
+├── ros2_ws/src/
+│   ├── gesture_msgs/            # ament_cmake, Gesture.msg
+│   ├── gesture_bridge/          # ament_python, v1 only
+│   ├── gesture_behavior/        # ament_cmake, C++ node, per-robot YAML
+│   ├── gesture_sim/             # hand xacro, controller and pose YAML, worlds
+│   ├── gesture_bringup/         # one launch file for every combination
+│   ├── micro_ros_msgs/          # only if building the agent from source
+│   └── micro-ROS-Agent/         # only if building the agent from source
+├── scripts/sync_msgs.sh
+├── tests/debouncer_test.cpp
+└── docs/                        # this design, interface snapshot, benchmarks</code></pre>
+
+  <h3>Building the micro-ROS agent on the Mac</h3>
+<pre><code>pixi search ros-jazzy-micro-ros-agent    # use a prebuilt package if one exists
+
+# otherwise build it from source in your workspace
+cd ros2_ws/src
+git clone -b jazzy https://github.com/micro-ROS/micro_ros_msgs.git
+git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git
+cd .. &amp;&amp; colcon build --packages-up-to micro_ros_agent</code></pre>
+  <p>Test it on its own with <code>ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -v6</code>.</p>
+
+  <h3>One launch file</h3>
+  <p>Four arguments cover every combination: <code>transport</code> (<code>serial</code> or <code>microros</code>), <code>port</code>, <code>robot</code> (<code>turtlesim</code>, <code>turtlebot3</code>, or <code>hand</code>), and <code>use_gazebo</code>.</p>
+<pre><code># v1, stage A: bridge + turtlesim
+ros2 launch gesture_bringup bringup.launch.py transport:=serial \
+    port:=/dev/cu.usbmodem101 robot:=turtlesim
+
+# v2, stage B: micro-ROS + hand in Gazebo (then run gz sim -g in a second terminal)
+ros2 launch gesture_bringup bringup.launch.py transport:=microros \
+    robot:=hand use_gazebo:=true</code></pre>
+  <p class="file">gesture_bringup/launch/bringup.launch.py (excerpt)</p>
+<pre><code>from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import EqualsSubstitution, LaunchConfiguration
+from launch_ros.actions import Node
+
+transport = LaunchConfiguration('transport')
+
+args = [
+    DeclareLaunchArgument('transport', default_value='serial'),
+    DeclareLaunchArgument('port', default_value='/dev/cu.usbmodem101'),
+    DeclareLaunchArgument('robot', default_value='turtlesim'),
+    DeclareLaunchArgument('use_gazebo', default_value='false'),
+]
+
+bridge = Node(
+    package='gesture_bridge', executable='serial_bridge',
+    parameters=[{'port': LaunchConfiguration('port')}],
+    condition=IfCondition(EqualsSubstitution(transport, 'serial')),
+)
+
+agent = Node(
+    package='micro_ros_agent', executable='micro_ros_agent',
+    arguments=['udp4', '--port', '8888'],
+    condition=IfCondition(EqualsSubstitution(transport, 'microros')),
+)</code></pre>
+  <p>The behavior node always starts, loading the YAML that matches <code>robot</code>. The simulation part starts turtlesim, the stage A hand stack, or the Gazebo server. On the Mac, start the Gazebo server with <code>ros_gz_sim</code>'s <code>gz_sim.launch.py</code> and <code>gz_args</code> set to <code>-s -r &lt;world&gt;</code>, so it runs without the GUI, and open the GUI yourself with <code>gz sim -g</code>.</p>
+</section>
+
+<section id="failures">
+  <h2><span class="n">9</span>Failure handling</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Failure</th><th>How it's detected</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>Gesture flicker</td><td>Class changes between frames</td><td>Debouncer needs 5 matching frames</td></tr>
+      <tr><td>Hand leaves the frame</td><td>No usable box for 500 ms</td><td>Device reports <code>NONE</code>, robot stops</td></tr>
+      <tr><td>Camera unplugged <span class="tag v1">v1</span></td><td><code>SerialException</code></td><td>Bridge retries every 2 s; watchdog stops the robot</td></tr>
+      <tr><td>Wi-Fi or agent lost <span class="tag v2">v2</span></td><td>Agent ping fails</td><td>Device tears down and waits for the agent; watchdog stops the robot</td></tr>
+      <tr><td>Vision AI V2 stops sending</td><td>No INVOKE event for 2 s</td><td>Device sends <code>AT+BREAK</code>, then restarts inference</td></tr>
+      <tr><td>Corrupt data</td><td>JSON parse error</td><td>Line dropped and counted</td></tr>
+      <tr><td>QoS mismatch</td><td>Echo shows nothing; check <code>ros2 topic info -v</code></td><td>Both publishers use reliable, depth 10</td></tr>
+      <tr><td>Gazebo crashes on the Mac</td><td>Crash while loading a world with sensors</td><td>Remove the lidar from TurtleBot3, or move the ROS 2 side to the Ubuntu VM</td></tr>
+      <tr><td>Model swapped, class order changed</td><td>Acceptance test fails</td><td>Fix the one table in <code>map_class()</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="testing">
+  <h2><span class="n">10</span>Testing and benchmarks</h2>
+  <h3>Without hardware</h3>
+  <ul>
+    <li><strong>Debouncer unit test.</strong> <code>tests/debouncer_test.cpp</code> is a self-contained runner, with no test framework to install. From the repo root: <code>mkdir -p build &amp;&amp; g++ -std=c++17 -Wall -Wextra -Werror -Ifirmware/common tests/debouncer_test.cpp firmware/common/gesture_debouncer.cpp -o build/debouncer_test &amp;&amp; build/debouncer_test</code>. Its 24 cases cover flicker, low scores, the score threshold, a single missed frame, gaps that break a streak, the 500 ms timeout, switching gestures, unknown classes, and <code>millis()</code> wraparound.</li>
+    <li><strong>Bridge parser test.</strong> <code>tests/bridge_parser_test.py</code> runs with plain Python and no ROS environment, because the parsing lives in the ROS-free <code>gesture_bridge/parser.py</code>: <code>python3 tests/bridge_parser_test.py</code>. It covers each gesture parsing, extra fields ignored, and dropping garbage, missing fields, bad types, and out-of-range gestures. For the full serial-read and publish path, a pseudo-terminal harness (Python's <code>pty</code>, no <code>socat</code> needed) points the running node at a virtual serial pair and counts what publishes on <code>/gesture/event</code>; that one needs the ROS environment. The older <code>socat</code> route still works too: <code>socat -d -d pty,raw,echo=0 pty,raw,echo=0</code>, point the bridge at one end, write JSON lines into the other.</li>
+  </ul>
+  <h3>Acceptance test (run for v1 and again for v2)</h3>
+  <p>Ten trials per gesture, plus two recovery checks: unplug the camera (v1) or stop the agent (v2), and confirm the robot stops within 2 s. Pass means at least 9 of 10 correct responses per gesture and both recovery checks.</p>
+  <h3>Benchmarks for the write-up</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Metric</th><th>How to measure</th><th>v1</th><th>v2</th></tr></thead>
+    <tbody>
+      <tr><td>Rate at rest</td><td><code>ros2 topic hz /gesture/event</code></td><td></td><td></td></tr>
+      <tr><td>Hand to robot latency</td><td>Film your hand and the Gazebo window with slow-motion video and count frames</td><td></td><td></td></tr>
+      <tr><td>Device to ROS latency</td><td>v2 only: header stamp vs receive time, using the synced clock</td><td>n/a</td><td></td></tr>
+      <tr><td>Recovery time</td><td>Time from reconnecting until messages resume</td><td></td><td></td></tr>
+      <tr><td>Dropped messages</td><td>Bad-line count (v1) or publish failures (v2) over 10 minutes</td><td></td><td></td></tr>
+      <tr><td>Acceptance score</td><td>Correct responses out of 30</td><td></td><td></td></tr>
+    </tbody>
+  </table></div>
+  <p>The video method is the only fair end-to-end comparison, because v1 stamps messages on the PC while v2 stamps them on the device.</p>
+</section>
+
+<section id="verify">
+  <h2><span class="n">11</span>Verify on your hardware</h2>
+  <p>These points came from documentation and examples rather than the device. The first group is settled by phase 1; the rest still need checking when you reach them.</p>
+
+  <h3>Answered by the hardware</h3>
+  <ul>
+    <li><strong>Class order is paper 0, rock 1, scissors 2</strong>, which matches <code>map_class()</code> as written, so no edit was needed.</li>
+    <li><strong>Box <code>x</code>, <code>y</code> are the center, in a 240&times;240 frame.</strong> The model's input is 192&times;192, but the device rescales boxes to the preview frame before reporting them, so <code>kImgW</code> and <code>kImgH</code> are 240. No source states this, so it was measured by comparing a logged box against the preview frame it was drawn on.</li>
+    <li><strong>Scores arrive as 0 to 100</strong>, 53 to 88 observed in practice, so <code>b.score / 100.0f</code> is right.</li>
+    <li><strong>UART0 through the XIAO header reaches the Vision AI V2</strong> at 921600 baud with USB CDC On Boot enabled, which is the same physical link v2 will use.</li>
+    <li><strong>The camera applies its own confidence threshold</strong> before the firmware sees anything. It is device state (<code>AT+TSCORE</code>), set from SenseCraft and kept in flash across power cycles. Keep it below the debouncer's <code>min_score</code>, or the debouncer's threshold never decides anything.</li>
+    <li><strong>The camera firmware accepts the three-argument <code>AT+INVOKE</code></strong> that the SSCMA library sends.</li>
+  </ul>
+
+  <h3>Still open</h3>
+  <ul>
+    <li>Each AT reply arrives on a single line. The library handles framing for v1, so this only matters when you write your own parser in step M4.</li>
+    <li>The message type the TurtleBot3 simulation expects on <code>/cmd_vel</code>.</li>
+    <li>Every package in the setup command resolves in RoboStack for macOS Apple Silicon.</li>
+    <li>The micro-ROS agent is available prebuilt, or builds from source on macOS.</li>
+    <li>Gazebo Harmonic runs your hand and TurtleBot3 models on the Mac with the server and GUI in separate terminals.</li>
+  </ul>
+</section>
+
+<section id="plan">
+  <h2><span class="n">12</span>Build plan by phase</h2>
+  <p>What to build, in what order, and how to know a phase is finished. Sections 4 to 10 hold the details for each piece.</p>
+
+  <h3>Phase 1: camera and firmware v1</h3>
+  <p><strong>Goal:</strong> the camera prints clean gesture events over USB.</p>
+  <ol class="steps">
+    <li>Deploy the Gesture Detection model from SenseCraft AI to the Vision AI V2. In the live preview, hold up each gesture and write down the class index it reports.</li>
+    <li>Set up the Arduino IDE: ESP32 board package, board <code>XIAO_ESP32C3</code>, <strong>USB CDC On Boot</strong> enabled, and the <code>Seeed_Arduino_SSCMA</code> library.</li>
+    <li>Add <code>firmware/common/gesture_debouncer.h</code> and <code>.cpp</code> (section 6.1) and run the host unit test before touching hardware.</li>
+    <li>Write the sketch (section 6.2). First log raw boxes to confirm the score scale, the coordinate resolution, and whether <code>x</code>, <code>y</code> are the center or the corner, then fill in <code>kImgW</code> and <code>kImgH</code>.</li>
+    <li>Update <code>map_class()</code> if your class order differs from the preview.</li>
+  </ol>
+  <p><strong>Done when:</strong> the Serial Monitor at 115200 baud shows one JSON line per gesture change, a heartbeat line each second, and a <code>255</code> line about half a second after your hand leaves the frame.</p>
+  <p><strong>Done 2026-09-19.</strong> All three behaviors confirmed on the device, with the findings in section 11. Two fixes came out of it: the <code>invoke()</code> arguments in 6.2, and clearing a partial streak across a long gap in 6.1.</p>
+
+  <h3>Phase 2: contract and bridge</h3>
+  <p><strong>Goal:</strong> those events arrive on <code>/gesture/event</code>.</p>
+  <ol class="steps">
+    <li>Create <code>gesture_msgs</code> (<code>ament_cmake</code>) with <code>Gesture.msg</code> from section 4, then <code>colcon build</code> and check <code>ros2 interface show gesture_msgs/msg/Gesture</code>.</li>
+    <li>Create <code>gesture_bridge</code> (<code>ament_python</code>) with <code>serial_bridge.py</code> from section 6.3, and register the entry point <code>serial_bridge = gesture_bridge.serial_bridge:main</code> in <code>setup.py</code>.</li>
+    <li>Close the Arduino Serial Monitor, then run the bridge with your <code>port</code> parameter.</li>
+    <li>Test the failure paths with the virtual serial pair from section 10: malformed lines, out-of-range values, and unplugging the camera.</li>
+  </ol>
+  <p><strong>Done when:</strong> <code>ros2 topic echo /gesture/event</code> shows a message on each gesture change, <code>ros2 topic hz /gesture/event</code> reads about 1 Hz at rest, and bad input never kills the node.</p>
+  <p><strong>Done 2026-09-23.</strong> All three gestures and <code>NONE</code> confirmed on <code>/gesture/event</code> with correct values and <code>frame_id gesture_camera</code>, and the 1 s heartbeat visible in the message stamps. The out-of-range finding above came out of the failure-path testing.</p>
+
+  <h3>Phase 3: behavior node and turtlesim</h3>
+  <p><strong>Goal:</strong> gestures drive a robot, and losing the camera stops it.</p>
+  <ol class="steps">
+    <li>Create <code>gesture_behavior</code> (<code>ament_cmake</code>, C++) with the responsibilities in section 6.4: change detection, a 10 Hz velocity timer, and a 5 Hz watchdog.</li>
+    <li>Add <code>config/turtlesim.yaml</code>, and <code>turtlebot3.yaml</code> later with gentler speeds.</li>
+    <li>Create <code>gesture_bringup</code> with <code>bringup.launch.py</code> and its four arguments (section 8), starting with <code>transport</code>, <code>port</code>, and <code>robot</code>.</li>
+    <li>Check the message type with <code>ros2 topic info</code> before assuming <code>Twist</code>.</li>
+  </ol>
+  <p><strong>Done when:</strong> rock stops the turtle, paper drives it, scissors rotates it, unplugging the camera stops it within 2 s, and one launch command starts the whole stack.</p>
+  <p><strong>Done 2026-09-23.</strong> All five confirmed on hardware from a single <code>ros2 launch gesture_bringup bringup.launch.py</code>, plus the recovery path: after an unplug the bridge reconnects on its own (retries every 2 s, forever, by design) and gestures resume with no restart. The behavior-node logic was also checked headlessly before the hardware run. The one build issue was the macOS linker trap noted in 6.4.</p>
+
+  <h3>Phase 4: hand mimic, then Gazebo</h3>
+  <p><strong>Goal:</strong> a five-finger hand mirrors your gesture.</p>
+  <p>Split into two PRs once work started, mirroring how phases 1-3 each shipped as their own PR: <strong>4a</strong> is the hand in RViz2 with <code>ros2_control</code> mock hardware; <strong>4b</strong>, a follow-up, adds TurtleBot3 and moves the same hand to Gazebo Harmonic. The split kept 4a's diff small enough that real-hardware testing could catch a geometry bug before 4b builds anything on top of it.</p>
+
+  <p><strong>4a steps:</strong></p>
+  <ol class="steps">
+    <li>Create <code>gesture_sim</code> with <code>simple_hand.urdf.xacro</code> and <code>hand_controllers.yaml</code> (section 6.5). Poses ended up living in <code>gesture_behavior/config/hand.yaml</code> alongside <code>turtlesim.yaml</code> and <code>turtlebot3.yaml</code>, not a separate <code>hand_poses.yaml</code> — matching that existing per-robot pattern instead of adding a second one. Check the model with <code>xacro</code> and <code>check_urdf</code> before launching anything.</li>
+    <li>Add the stage A launch: <code>robot_state_publisher</code>, <code>ros2_control_node</code>, the controller spawners, and RViz2. Test the poses by hand with <code>ros2 topic pub</code> before wiring the gestures in.</li>
+    <li>Extend the behavior node to publish <code>JointTrajectory</code> when <code>robot</code> is <code>hand</code>.</li>
+  </ol>
+  <p><strong>4a done when:</strong> all three poses appear in RViz2 within about a second of the gesture, and unplugging the camera holds the hand's last pose instead of resetting it.</p>
+  <div class="verify"><p><strong>Done 2026-09-24.</strong> All three poses confirmed on hardware, plus the hold-last-pose behavior across both a hand leaving the frame and a camera unplug/replug. One real bug came out of it: each finger's joint mounted with no pitch, so 0 rad pointed straight up out of the palm's face instead of forward, so "curled" looked flat and spread instead of a closing fist. Fixed by pitching the mount 90 degrees so 0 rad extends forward and larger values curl down into the palm, verified against the actual palm-to-fingertip transform for all three poses rather than by eye alone. A second pass turned off the saved RViz view's TF display, since the axis markers and overlapping frame-name labels were hiding the actual hand shape, especially in the rock pose where curled fingers correctly tuck under the palm and out of view from above.</p></div>
+
+  <p><strong>4b steps</strong> (not started):</p>
+  <ol class="steps">
+    <li>Install the Gazebo packages (<code>ros-jazzy-ros-gz</code>, <code>ros-jazzy-gz-ros2-control</code>, <code>ros-jazzy-turtlebot3-gazebo</code>) — not needed for 4a.</li>
+    <li>Spawn TurtleBot3 Burger with its lidar removed (section 2's Gazebo sensors note), since nothing here reads TurtleBot3's own sensors.</li>
+    <li>Launch with <code>use_gazebo:=true</code> and open the GUI in a second terminal.</li>
+  </ol>
+  <p><strong>4b done when:</strong> the same three poses appear in Gazebo with no change to the behavior node, TurtleBot3 drives alongside the hand, and you have a short screen recording for the write-up.</p>
+
+  <h3>Phase 5: firmware v2</h3>
+  <p><strong>Goal:</strong> the ESP32-C3 publishes to ROS 2 by itself.</p>
+  <ol class="steps">
+    <li>Create the ESP-IDF project, add the micro-ROS component as a submodule, and add <code>scripts/sync_msgs.sh</code> for the custom message.</li>
+    <li>Build the micro-ROS agent on the Mac (section 8) and confirm it with the component's <code>int32_publisher</code> example.</li>
+    <li>Write <code>at_client.cpp</code>: log raw UART bytes first, then parse, then feed the shared debouncer.</li>
+    <li>Write <code>ros_link.cpp</code>: reconnection state machine, time sync, heartbeat timer, and the publisher.</li>
+  </ol>
+  <p>Follow M1 to M7 in section 7 for the order and the check at each step.</p>
+  <p><strong>Done when:</strong> <code>ros2 topic echo</code> shows the same message structure as v1, the heartbeat holds at about 1 Hz, and the device reconnects on its own after you restart the agent.</p>
+
+  <h3>Phase 6: swap and benchmark</h3>
+  <p><strong>Goal:</strong> prove the swap changed nothing downstream.</p>
+  <ol class="steps">
+    <li>Launch with <code>transport:=microros</code> and no other changes.</li>
+    <li>Rerun the acceptance test from section 10 and compare with the v1 results.</li>
+    <li>Fill in the benchmark table and save it as <code>docs/benchmarks.md</code>.</li>
+    <li>Record the demo video and write the README around the two architecture diagrams in section 3.</li>
+  </ol>
+  <p><strong>Done when:</strong> the acceptance results match v1, the benchmark table is complete, and the README explains why the migration needed only a firmware flash and a launch argument.</p>
+</section>
+
+<footer>
+  <p>Reference docs: Seeed Studio wiki for the Grove Vision AI V2 and its AT commands, the SSCMA-Micro AT protocol spec, the micro-ROS ESP-IDF component README, RoboStack, and the Gazebo macOS getting-started notes.</p>
+</footer>
+
+</main>
+</div>
+</div>
+</body>
+</html>

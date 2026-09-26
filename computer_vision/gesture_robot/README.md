@@ -191,7 +191,23 @@ cd ros2_ws && colcon build && source install/setup.zsh
 ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.usbmodemXXXX robot:=hand
 ```
 
-This starts `robot_state_publisher`, a standalone `controller_manager` (mock hardware, no Gazebo yet), the `joint_state_broadcaster` and `hand_controller` spawners, `gesture_behavior`, and RViz2 with a saved view. Each gesture mimics on the hand within about a second; TurtleBot3 and Gazebo join in a follow-up phase 4 PR, reusing this same model and controller config.
+This starts `robot_state_publisher`, a standalone `controller_manager` (mock hardware, no Gazebo yet), the `joint_state_broadcaster` and `hand_controller` spawners, `gesture_behavior`, and RViz2 with a saved view. Each gesture mimics on the hand within about a second.
+
+### In Gazebo
+
+Add `use_gazebo:=true` and the same hand runs in Gazebo Harmonic, driven by real physics through `gz_ros2_control` instead of mock hardware — no change to the model, controllers, or behavior node:
+
+```bash
+ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.usbmodemXXXX robot:=hand use_gazebo:=true
+```
+
+The launch starts a headless Gazebo server, spawns the hand, bridges the simulation `/clock`, and opens RViz2 as the viewer. A few macOS-specific notes:
+
+- **The Gazebo GUI (`gz sim -g`) does not render on macOS** — the conda build's OGRE/Metal engine fails to load, so the window is blank. RViz2 is the viewer instead (its own OGRE works), showing the hand on Gazebo's `/joint_states` and `/tf`. The simulation itself is unaffected.
+- The launch adds the conda `lib` dir to `GZ_SIM_SYSTEM_PLUGIN_PATH` so Gazebo finds the `gz_ros2_control` plugin, which RoboStack ships but doesn't put on that path.
+- The hand's `<gazebo>` block sets `position_proportional_gain` to 0.5 (the 0.1 default barely moves the joints), and the palm is lifted off the ground so the fingers have room to curl without colliding with the ground plane.
+
+TurtleBot3 driving alongside the hand joins in a follow-up PR, reusing this same world and launch path.
 
 ## Running the tests
 

@@ -3,7 +3,7 @@ project(gesture_sim)
 
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY urdf config rviz
+install(DIRECTORY urdf config rviz worlds
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()

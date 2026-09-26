@@ -86,9 +86,13 @@
 
   <link name="world"/>
 
+  <!-- Lift the palm off the ground so the fingers have room to curl down in
+       Gazebo without colliding with the ground plane (which pinned the curl in
+       RViz-free physics). Harmless in RViz. -->
   <joint name="world_to_palm" type="fixed">
     <parent link="world"/>
     <child link="palm"/>
+    <origin xyz="0 0 0.5" rpy="0 0 0"/>
   </joint>
 
   <link name="palm">
@@ -130,5 +134,22 @@
     <joint name="pinky_j1"><command_interface name="position"/><state_interface name="position"/></joint>
     <joint name="pinky_j2"><command_interface name="position"/><state_interface name="position"/></joint>
   </ros2_control>
+
+  <!-- In Gazebo, gz_ros2_control hosts the controller manager itself through
+       this plugin, so the launch file leaves out the standalone ros2_control_node
+       used in RViz-only (stage A). Inert unless use_gazebo:=true. -->
+  <xacro:if value="$(arg use_gazebo)">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system"
+              name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find gesture_sim)/config/hand_controllers.yaml</parameters>
+        <!-- Position command interface drives joint velocity as
+             gain * position_error * update_rate. The 0.1 default barely moves
+             the fingers; 0.5 tracks the poses without the oscillation the docs
+             warn about above ~1.0. -->
+        <position_proportional_gain>0.5</position_proportional_gain>
+      </plugin>
+    </gazebo>
+  </xacro:if>
 
 </robot>

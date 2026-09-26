@@ -5,6 +5,9 @@
 .vscode/
 .idea/
 
+# Session handoff notes — working scratch, not project content
+SESSION_NOTES.md
+
 # pixi environment (recreate with `pixi install`)
 .pixi/*
 !.pixi/config.toml

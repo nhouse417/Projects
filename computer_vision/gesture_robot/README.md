@@ -9,8 +9,8 @@ A hand gesture seen by a XIAO Vision AI Camera drives a simulated robot in ROS 2
 | 1 | Firmware v1: Arduino sketch reads gestures, debounces, prints JSON over USB | Done |
 | 2 | `gesture_msgs` contract and the Python serial bridge | Done |
 | 3 | C++ behavior node drives turtlesim, with a safety watchdog | Done |
-| 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Next |
-| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | Planned |
+| 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Done |
+| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | Next |
 | 6 | Swap the transport, rerun the same tests, benchmark v1 against v2 | Planned |
 
 ## Goals
@@ -207,7 +207,24 @@ The launch starts a headless Gazebo server, spawns the hand, bridges the simulat
 - The launch adds the conda `lib` dir to `GZ_SIM_SYSTEM_PLUGIN_PATH` so Gazebo finds the `gz_ros2_control` plugin, which RoboStack ships but doesn't put on that path.
 - The hand's `<gazebo>` block sets `position_proportional_gain` to 0.5 (the 0.1 default barely moves the joints), and the palm is lifted off the ground so the fingers have room to curl without colliding with the ground plane.
 
-TurtleBot3 driving alongside the hand joins in a follow-up PR, reusing this same world and launch path.
+## TurtleBot3 (Gazebo)
+
+`robot:=turtlebot3` drives a TurtleBot3 Burger in the same Gazebo world instead of the hand — the mobile counterpart to the hand, selected the same way turtlesim and the hand are. It reuses the phase 3 velocity path: `gesture_behavior` loads `config/turtlebot3.yaml` and publishes `Twist` on `/cmd_vel`, and a `ros_gz_bridge` forwards that to the Burger's `DiffDrive` plugin.
+
+```bash
+ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.usbmodemXXXX robot:=turtlebot3
+```
+
+`robot:=turtlebot3` implies Gazebo, so no `use_gazebo:=true` is needed. Paper drives forward (0.15 m/s), scissors rotates (0.6 rad/s), rock stops, and the watchdog stops the robot within 2 s of losing the gesture stream. RViz2 opens as the viewer (the Gazebo GUI limitation above applies), showing the Burger drive with an odometry trail.
+
+| Part | How |
+|---|---|
+| Model | The **stock** TurtleBot3 Burger, spawned unmodified |
+| LIDAR | Not removed from the model — instead `gesture_world.sdf` omits Gazebo's sensors system plugin, so the declared GPU lidar never initializes the render engine (which is what crashes Gazebo Harmonic on macOS). The `DiffDrive` and joint-state plugins are per-model and unaffected. |
+| Command type | Plain `Twist` — the `DiffDrive` plugin takes `gz.msgs.Twist`, bridged from `geometry_msgs/Twist`, so no `TwistStamped` is needed |
+| Visualization | `robot_state_publisher` (the Burger URDF from `turtlebot3_gazebo`) plus RViz2, driven by `/tf`, `/odom`, and `/joint_states` bridged from Gazebo |
+
+The hand and TurtleBot3 run as separate `robot:=` options, one at a time, matching how every robot in the project is selected — not both in one scene.
 
 ## Running the tests
 

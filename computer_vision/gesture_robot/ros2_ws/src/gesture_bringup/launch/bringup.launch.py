@@ -1,9 +1,10 @@
 """One launch file for the whole v1 stack.
 
-Phase 3 covers the serial transport and turtlesim. Phase 4 adds the hand,
-shown in RViz2 with ros2_control mock hardware; the same model moves to
-Gazebo (use_gazebo:=true) and TurtleBot3 joins it later in phase 4. The
-micro-ROS agent (transport:=microros) is added in phase 5.
+Phase 3 covers the serial transport and turtlesim. Phase 4 adds the hand (in
+RViz2 with mock hardware, or in Gazebo with gz_ros2_control via use_gazebo:=true)
+and TurtleBot3 (robot:=turtlebot3, always in Gazebo). Gazebo's own GUI does not
+render on macOS, so RViz2 is the viewer for both Gazebo robots. The micro-ROS
+agent (transport:=microros) is added in phase 5.
 """
 from launch import LaunchDescription
 from launch.actions import (
@@ -21,6 +22,7 @@ from launch.substitutions import (
     FindExecutable,
     LaunchConfiguration,
     NotSubstitution,
+    OrSubstitution,
     PathJoinSubstitution,
 )
 from launch_ros.actions import Node
@@ -34,17 +36,20 @@ def generate_launch_description():
     robot = LaunchConfiguration('robot')
     use_gazebo = LaunchConfiguration('use_gazebo')
     is_hand = EqualsSubstitution(robot, 'hand')
+    is_tb3 = EqualsSubstitution(robot, 'turtlebot3')
     # The hand runs one of two backends: ros2_control mock hardware in RViz
     # (stage A), or gz_ros2_control inside Gazebo (stage B). robot_state_publisher
     # and the controller spawners are shared; only the controller-manager host,
     # the visualizer, and the Gazebo-only nodes differ.
     hand_rviz = AndSubstitution(is_hand, NotSubstitution(use_gazebo))
     hand_gazebo = AndSubstitution(is_hand, use_gazebo)
-    # In Gazebo everything runs on the simulation clock. RViz is the viewer in
-    # both stages: Gazebo Harmonic's own GUI renderer is unreliable on macOS
-    # (OGRE/Metal in the conda build), so RViz shows the hand even in stage B,
-    # driven by the same controllers.
-    use_sim_time = ParameterValue(use_gazebo, value_type=bool)
+    # TurtleBot3 only runs in Gazebo, so it implies the sim without use_gazebo.
+    gazebo_up = OrSubstitution(hand_gazebo, is_tb3)
+    # In Gazebo everything runs on the simulation clock. RViz is the viewer for
+    # every Gazebo robot: Gazebo Harmonic's own GUI renderer is unreliable on
+    # macOS (OGRE/Metal in the conda build).
+    use_sim_time = ParameterValue(OrSubstitution(use_gazebo, is_tb3),
+                                  value_type=bool)
 
     args = [
         DeclareLaunchArgument('transport', default_value='serial',
@@ -149,10 +154,7 @@ def generate_launch_description():
         condition=IfCondition(hand_gazebo),
     )
 
-    # Stage B only (Gazebo): headless server (GUI is opened separately with
-    # `gz sim -g`), then spawn the hand from the robot_description topic. The
-    # gz_ros2_control plugin in the URDF brings up the controller manager, which
-    # the shared spawners above then populate.
+    # Shared headless Gazebo server (its GUI is skipped; RViz is the viewer).
     gz_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -161,12 +163,15 @@ def generate_launch_description():
         ]),
         launch_arguments={
             'gz_args': ['-s -r ', PathJoinSubstitution([
-                FindPackageShare('gesture_sim'), 'worlds', 'hand_world.sdf',
+                FindPackageShare('gesture_sim'), 'worlds', 'gesture_world.sdf',
             ])],
         }.items(),
-        condition=IfCondition(hand_gazebo),
+        condition=IfCondition(gazebo_up),
     )
 
+    # Hand in Gazebo: spawn from the robot_description topic. The gz_ros2_control
+    # plugin in the URDF brings up the controller manager, which the shared
+    # spawners above then populate.
     spawn_hand = Node(
         package='ros_gz_sim', executable='create',
         arguments=['-topic', 'robot_description', '-name', 'hand'],
@@ -174,13 +179,79 @@ def generate_launch_description():
     )
 
     # Bridge Gazebo's simulation clock to ROS /clock. Without it, every node
-    # running use_sim_time (the controller manager and its controllers) sits
-    # waiting for time and the trajectory controller never advances a pose.
+    # running use_sim_time sits waiting for time.
     clock_bridge = Node(
         package='ros_gz_bridge', executable='parameter_bridge',
         name='clock_bridge',
         arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
-        condition=IfCondition(hand_gazebo),
+        condition=IfCondition(gazebo_up),
+    )
+
+    # --- TurtleBot3 in Gazebo (robot:=turtlebot3) ---------------------------
+    # The Burger's meshes are referenced as model://turtlebot3_common/..., so
+    # Gazebo needs the package's models dir on its resource path to find them.
+    tb3_resource_path = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        PathJoinSubstitution([FindPackageShare('turtlebot3_gazebo'), 'models']),
+        condition=IfCondition(is_tb3),
+    )
+
+    # Spawn the stock Burger. Its lidar is declared but never renders, because
+    # gesture_world omits the sensors system plugin (avoids the macOS crash).
+    spawn_burger = Node(
+        package='ros_gz_sim', executable='create',
+        arguments=[
+            '-world', 'gesture_world', '-name', 'burger', '-z', '0.01',
+            '-file', PathJoinSubstitution([
+                FindPackageShare('turtlebot3_gazebo'),
+                'models', 'turtlebot3_burger', 'model.sdf',
+            ]),
+        ],
+        condition=IfCondition(is_tb3),
+    )
+
+    # Bridge the Burger's ROS<->gz topics: gesture_behavior's Twist on /cmd_vel
+    # drives the DiffDrive plugin; odom, tf, and joint_states come back for RViz.
+    tb3_bridge = Node(
+        package='ros_gz_bridge', executable='parameter_bridge',
+        name='turtlebot3_bridge',
+        arguments=[
+            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
+        condition=IfCondition(is_tb3),
+    )
+
+    # robot_state_publisher + RViz so the Burger is visible (Gazebo GUI is dead
+    # on macOS). The URDF ships with turtlebot3_gazebo as a plain file.
+    tb3_description = ParameterValue(
+        Command([
+            'cat ', PathJoinSubstitution([
+                FindPackageShare('turtlebot3_gazebo'),
+                'urdf', 'turtlebot3_burger.urdf',
+            ]),
+        ]),
+        value_type=str,
+    )
+
+    tb3_state_publisher = Node(
+        package='robot_state_publisher', executable='robot_state_publisher',
+        name='robot_state_publisher',
+        parameters=[{'robot_description': tb3_description,
+                     'use_sim_time': use_sim_time}],
+        condition=IfCondition(is_tb3),
+    )
+
+    tb3_rviz = Node(
+        package='rviz2', executable='rviz2', name='rviz2',
+        arguments=['-d', PathJoinSubstitution([
+            FindPackageShare('gesture_sim'), 'rviz', 'turtlebot3.rviz',
+        ])],
+        parameters=[{'use_sim_time': use_sim_time}],
+        condition=IfCondition(is_tb3),
     )
 
     return LaunchDescription(args + [
@@ -190,4 +261,6 @@ def generate_launch_description():
         joint_state_broadcaster_spawner, hand_controller_spawner,
         controller_manager, rviz,
         gz_server, spawn_hand, clock_bridge,
+        tb3_resource_path, spawn_burger, tb3_bridge,
+        tb3_state_publisher, tb3_rviz,
     ])

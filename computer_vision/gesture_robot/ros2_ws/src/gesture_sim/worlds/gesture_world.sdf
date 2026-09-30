@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
-<!-- Minimal Gazebo Harmonic world for the gesture stack: physics, a scene
-     broadcaster so the GUI (gz sim -g) can attach, a sun, and a ground plane.
-     Deliberately has no camera or lidar sensors, which crash Gazebo Harmonic
-     on macOS (see the design doc's Gazebo-on-Mac notes). -->
+<!-- Minimal Gazebo Harmonic world shared by the hand and TurtleBot3: physics, a
+     scene broadcaster, a sun, and a ground plane. Deliberately omits the
+     gz-sim-sensors-system plugin, so declared rendering sensors (like the
+     TurtleBot3 lidar) never initialize the render engine, which crashes Gazebo
+     Harmonic on macOS. That lets the stock Burger spawn unmodified. -->
 <sdf version="1.10">
-  <world name="hand_world">
+  <world name="gesture_world">
     <physics name="1ms" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>

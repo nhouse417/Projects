@@ -10,7 +10,7 @@ A hand gesture seen by a XIAO Vision AI Camera drives a simulated robot in ROS 2
 | 2 | `gesture_msgs` contract and the Python serial bridge | Done |
 | 3 | C++ behavior node drives turtlesim, with a safety watchdog | Done |
 | 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Done |
-| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | Next |
+| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | In progress |
 | 6 | Swap the transport, rerun the same tests, benchmark v1 against v2 | Planned |
 
 ## Goals
@@ -225,6 +225,39 @@ ros2 launch gesture_bringup bringup.launch.py transport:=serial port:=/dev/cu.us
 | Visualization | `robot_state_publisher` (the Burger URDF from `turtlebot3_gazebo`) plus RViz2, driven by `/tf`, `/odom`, and `/joint_states` bridged from Gazebo |
 
 The hand and TurtleBot3 run as separate `robot:=` options, one at a time, matching how every robot in the project is selected — not both in one scene.
+
+## Firmware v2 (micro-ROS) — in progress
+
+v2 replaces the v1 serial bridge: the ESP32-C3 publishes `/gesture/event` itself over Wi-Fi via micro-ROS (XRCE-DDS to a micro-ROS agent running on the Mac), with nothing downstream changed. Select it with `transport:=microros`, which starts the agent instead of the serial bridge:
+
+```bash
+ros2 launch gesture_bringup bringup.launch.py transport:=microros robot:=turtlesim
+```
+
+Status: the transport is proven end-to-end (migration steps M1–M2). The agent builds and runs on the Mac, and the micro-ROS `int32_publisher` example flashed to the ESP32-C3 publishes over Wi-Fi and is received by `ros2 topic echo`. The actual gesture firmware (AT client + shared debouncer over micro-ROS) is M3–M5, still to come.
+
+### Building the micro-ROS agent
+
+No prebuilt `ros-jazzy-micro-ros-agent` exists for osx-arm64, so it's built from source into `ros2_ws`. `scripts/build_agent.sh` clones the two repos (gitignored, not project source), applies the macOS fixes below, and builds:
+
+```bash
+pixi shell
+scripts/build_agent.sh
+```
+
+Two macOS/RoboStack fixes are needed and are applied by that script:
+
+- **`fmt` 12.x is too new for the pinned XRCE-DDS agent** — its endpoint logging won't compile under fmt 10+. The script disables that logger profile (`UAGENT_LOGGER_PROFILE=OFF`) in the agent's CMake.
+- **The agent aborts at startup with `symbol not found: _PyExc_RuntimeError`** — it links Python typesupport libraries (`rosidl_generator_py`) it never uses, which need libpython a C++ binary doesn't have. Building with `-Wl,-dead_strip_dylibs` drops them from the load commands — the same fix used for the C++ behavior node.
+
+### ESP-IDF on this Mac (notes)
+
+The firmware builds with ESP-IDF 5.4 and the `micro_ros_espidf_component` (jazzy). A few macOS-specific gotchas when building the micro-ROS library:
+
+- **Use Python 3.9–3.12, not 3.14** — ESP-IDF 5.4's installer doesn't support Homebrew's 3.14; point `get_idf` at a pyenv 3.12.
+- **Install the micro-ROS build tools into the ESP-IDF venv**: `pip install catkin_pkg colcon-common-extensions lark empy==3.3.4`.
+- **Force the venv Python for the library build** — macOS cmake otherwise grabs Homebrew's framework Python (no `catkin_pkg`); the component's `libmicroros.mk` colcon commands need `-DPython3_EXECUTABLE=$(which python3)`.
+- **Use `g++`, not `gcc`, for the host C++ build** — the component defaults `CMAKE_CXX_COMPILER=gcc`, which on macOS doesn't link libc++; switch it to `g++`.
 
 ## Running the tests
 

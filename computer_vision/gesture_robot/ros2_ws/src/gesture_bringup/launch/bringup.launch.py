@@ -1,10 +1,13 @@
-"""One launch file for the whole v1 stack.
+"""One launch file for the whole stack.
 
-Phase 3 covers the serial transport and turtlesim. Phase 4 adds the hand (in
-RViz2 with mock hardware, or in Gazebo with gz_ros2_control via use_gazebo:=true)
-and TurtleBot3 (robot:=turtlebot3, always in Gazebo). Gazebo's own GUI does not
-render on macOS, so RViz2 is the viewer for both Gazebo robots. The micro-ROS
-agent (transport:=microros) is added in phase 5.
+The transport (serial bridge in v1, micro-ROS agent in v2) is chosen with
+`transport`, and the robot with `robot`. Phase 3 covers the serial transport and
+turtlesim. Phase 4 adds the hand (in RViz2 with mock hardware, or in Gazebo with
+gz_ros2_control via use_gazebo:=true) and TurtleBot3 (robot:=turtlebot3, always
+in Gazebo). Gazebo's own GUI does not render on macOS, so RViz2 is the viewer for
+both Gazebo robots. Phase 5 adds transport:=microros, which starts the micro-ROS
+agent (the ESP32-C3 publishes /gesture/event itself over Wi-Fi) instead of the
+serial bridge; everything downstream is identical to serial.
 """
 from launch import LaunchDescription
 from launch.actions import (
@@ -67,6 +70,16 @@ def generate_launch_description():
         name='gesture_bridge',
         parameters=[{'port': port}],
         condition=IfCondition(EqualsSubstitution(transport, 'serial')),
+    )
+
+    # v2 micro-ROS agent: the ESP32-C3 publishes /gesture/event itself over
+    # Wi-Fi (XRCE-DDS, UDP 8888), and the agent presents it as a normal ROS 2
+    # node. Nothing downstream (behavior, sim) changes between transports.
+    agent = Node(
+        package='micro_ros_agent', executable='micro_ros_agent',
+        name='micro_ros_agent',
+        arguments=['udp4', '--port', '8888'],
+        condition=IfCondition(EqualsSubstitution(transport, 'microros')),
     )
 
     turtlesim = Node(
@@ -256,7 +269,7 @@ def generate_launch_description():
 
     return LaunchDescription(args + [
         gz_plugin_path,
-        bridge, turtlesim, behavior,
+        bridge, agent, turtlesim, behavior,
         robot_state_publisher,
         joint_state_broadcaster_spawner, hand_controller_spawner,
         controller_manager, rviz,

@@ -18,6 +18,7 @@ build/
 # colcon workspace output
 ros2_ws/install/
 ros2_ws/log/
+/log/
 
 # Python
 __pycache__/
@@ -29,3 +30,8 @@ __pycache__/
 sdkconfig
 sdkconfig.old
 managed_components/
+
+# micro-ROS agent, built from source in the workspace (M2) — external repos,
+# not project source. Recreate with the clone commands in scripts/.
+ros2_ws/src/micro_ros_msgs/
+ros2_ws/src/micro-ROS-Agent/

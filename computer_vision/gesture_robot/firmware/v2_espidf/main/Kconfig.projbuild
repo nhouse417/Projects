@@ -1,0 +1,16 @@
+menu "Gesture firmware v2"
+
+    config MICRO_ROS_APP_STACK
+        int "micro-ROS app task stack (bytes)"
+        default 16000
+        help
+            Stack size for the task that runs the micro-ROS client.
+
+    config MICRO_ROS_APP_TASK_PRIO
+        int "micro-ROS app task priority"
+        default 5
+        help
+            Priority of the micro-ROS task. Higher is more important; keep it
+            below the Wi-Fi/lwIP tasks so networking is never starved.
+
+endmenu

@@ -1,0 +1,4 @@
+[submodule "computer_vision/gesture_robot/firmware/v2_espidf/components/micro_ros_espidf_component"]
+	path = computer_vision/gesture_robot/firmware/v2_espidf/components/micro_ros_espidf_component
+	url = https://github.com/micro-ROS/micro_ros_espidf_component.git
+	branch = jazzy

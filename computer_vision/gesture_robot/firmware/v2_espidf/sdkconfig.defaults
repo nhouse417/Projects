@@ -1,0 +1,23 @@
+# Credential-free defaults for gesture firmware v2. menuconfig writes the real
+# Wi-Fi SSID/password and agent IP into the gitignored sdkconfig, so none of
+# those appear here. Checked in so a clean build starts from a known-good config.
+
+# XIAO ESP32-C3.
+CONFIG_IDF_TARGET="esp32c3"
+
+# The XIAO ESP32-C3 has 4 MB of flash. micro-ROS needs a large app partition,
+# so use the built-in single-app-large table rather than the 1 MB default.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+# micro-ROS transport: Micro-XRCE-DDS over Wi-Fi UDP to the agent on the Mac.
+# The agent listens on 8888 (see the bringup launch file); the Mac's IP is set
+# in menuconfig under "micro-ROS Settings" together with the Wi-Fi credentials.
+CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE=y
+CONFIG_MICRO_ROS_ESP_NETIF_WLAN=y
+CONFIG_MICRO_ROS_AGENT_PORT="8888"
+
+# The micro-ROS task feeds the idle task each spin; the per-task watchdog adds
+# nothing here and the component's examples ship with it off.
+CONFIG_ESP_TASK_WDT_INIT=n

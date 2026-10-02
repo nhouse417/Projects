@@ -30,6 +30,7 @@ __pycache__/
 sdkconfig
 sdkconfig.old
 managed_components/
+dependencies.lock
 
 # micro-ROS agent, built from source in the workspace (M2) — external repos,
 # not project source. Recreate with the clone commands in scripts/.

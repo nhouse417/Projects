@@ -11,19 +11,33 @@ Migration runs in steps, each with a visible check (design doc section 7):
 | Step | What it adds | Check |
 |---|---|---|
 | M3 | custom message built into micro-ROS; hard-coded `Gesture` at 1 Hz | `ros2 topic echo /gesture/event` shows v1's fields |
-| **M4** | the AT client (UART1, raw then parsed boxes) | parsed boxes match v1 for the same hand |
-| M5 | shared debouncer, 1 s heartbeat, time sync, reconnection | `ros2 topic hz` ≈ 1 Hz at rest, extra msgs on change |
+| M4 | the AT client (UART1, raw then parsed boxes) | parsed boxes match v1 for the same hand |
+| **M5** | shared debouncer, 1 s heartbeat, time sync, reconnection | `ros2 topic hz` ≈ 1 Hz at rest, extra msgs on change |
 
-**Current: M4.** `main/app_main.cpp` runs only `vision_task` (`main/at_client.cpp`):
-it drives the Grove Vision AI V2 over UART1 at 921600 baud (XIAO **D6→TX**,
-**D7→RX**), sends `AT+INVOKE=-1,0,1`, frames each reply on `\r`/`\n`, parses the
-`[x,y,w,h,score,target]` boxes with cJSON, and logs the best one to the USB
-console. **No Wi-Fi or micro-ROS in this step** — M3's publisher and this camera
-path are joined by the shared debouncer and an event queue in M5, so M4 is
-verified on the serial monitor, not a ROS topic.
+**Current: M5 — the complete v2 firmware.** Two FreeRTOS tasks, so a slow Wi-Fi
+moment never makes the device miss frames:
 
-M3 (the hard-coded `Gesture` publisher) is in git history at the `Phase 5 (M3)`
-commit; this step replaces `app_main` with the camera path.
+- **`vision_task`** (`main/at_client.cpp`) reads the camera over UART1, parses
+  each frame, runs the **shared debouncer** (`firmware/common/gesture_debouncer.*`,
+  the same code v1 uses — symlinked into `main/`), and queues a `gesture::Event`
+  on each confirmed change (5 frames ≥ 0.60 to confirm, 500 ms none-timeout).
+- **`ros_task`** (`main/ros_link.cpp`) waits for the agent (pinging with
+  `rmw_uros_ping_agent_options`), creates the node/publisher, syncs device time to
+  the agent (`rmw_uros_sync_session`, so `header.stamp` is real), then publishes
+  queued changes immediately plus a **1 Hz heartbeat** with the current state from
+  an rclc timer.
+
+**Reconnection.** The link is monitored by publish success: with reliable QoS and
+a 1-deep stream, a vanished or restarted agent stops ACKing and `rcl_publish`
+fails within ~1-2 s; a few in a row and the device **reboots** (`esp_restart`) to
+reconnect. Tearing a micro-ROS session down in place once its agent is gone is
+unreliable on this component, whereas a fresh boot reconnects cleanly — the same
+path a power-cycle takes. The behavior node's 2 s watchdog has already stopped the
+robot by the time the reboot happens, and boot + Wi-Fi + reconnect takes a few
+seconds. (The design doc describes a graceful ping-based state machine; this is
+the pragmatic substitute that actually survives agent loss here.)
+
+This is the full v1-equivalent behavior, now published by the device itself.
 
 ## One-time setup
 
@@ -54,7 +68,7 @@ Jazzy env confuses that build.
 get_idf                 # ESP-IDF 5.4 export, forcing pyenv Python 3.12 (see below)
 cd firmware/v2_espidf
 idf.py set-target esp32c3        # first build only
-idf.py menuconfig                # Wi-Fi/agent settings — not needed for M4 (see below)
+idf.py menuconfig                # Wi-Fi SSID/password + Mac's IP (micro-ROS Settings)
 idf.py build
 idf.py -p /dev/cu.usbmodem3101 flash monitor
 ```
@@ -62,39 +76,39 @@ idf.py -p /dev/cu.usbmodem3101 flash monitor
 `idf.py menuconfig` sets the Wi-Fi SSID/password and the Mac's IP (under
 *micro-ROS Settings*), which land in the gitignored `sdkconfig`;
 `sdkconfig.defaults` holds only the credential-free settings (target, 4 MB flash,
-single-app-large partition, Wi-Fi UDP transport, agent port 8888).
-**M4 uses neither Wi-Fi nor the agent**, so you can skip `menuconfig` entirely
-for this step — it reads the camera over UART and logs to USB only.
+single-app-large partition, Wi-Fi UDP transport, agent port 8888). M5 needs these
+set — the Mac's IP must be its current LAN address, reachable from the ESP32.
 
-## Verify (M4 gate)
+## Verify (M5 gate)
 
-UART1 is routed to **D6/D7**, the XIAO header pins already wired to the Vision AI
-V2 on this board — the same link v1 drove over UART0, so there's nothing to wire.
-Just watch the monitor (no agent, no `ros2`):
+Start the agent on the Mac (inside `pixi shell`, workspace sourced), then watch
+the topic. The device connects on its own once the agent is up (and reconnects if
+it isn't — no need to reset the board):
 
 ```bash
-idf.py -p /dev/cu.usbmodem3101 monitor
+# terminal A (pixi): the whole stack, driving a robot from the camera
+ros2 launch gesture_bringup bringup.launch.py transport:=microros robot:=turtlesim
+# terminal B (pixi): rate + contents
+ros2 topic hz /gesture/event
+ros2 topic echo /gesture/event
 ```
 
-Hold a gesture in front of the camera; each inference frame logs the best box:
+**M5 passes** when:
 
-```
-box x=120 y=118 w=96 h=104 score=82 target=1  (cx=0.500 cy=0.492 s=0.82)
-```
+- `ros2 topic hz` shows **~1 Hz at rest** (the heartbeat), with **extra messages
+  on each gesture change**;
+- `header.stamp` is real wall-clock time now (not 0), from the agent time sync;
+- the robot responds to rock/paper/scissors exactly as it did under
+  `transport:=serial` (v1), and stops within ~2 s when the camera is covered or
+  unplugged (the behavior node's watchdog);
+- **reconnection:** Ctrl-C the launch and relaunch it — within a few seconds the
+  device reboots and reconnects on its own, and the topic resumes (the monitor
+  prints `agent lost; rebooting to reconnect`, then after the reboot `agent
+  connected`). A power-cycle of the board recovers the same way.
 
-The left block is the raw box in the 240×240 frame (same numbers v1 prints with
-`LOG_RAW_BOXES 1`); the parenthesised block is the normalized center and 0–1
-score the debouncer will consume in M5. **M4 passes** when `target`/`score` and
-the box track v1 for the same hand in the same lighting — paper `target 0`, rock
-`1`, scissors `2`. Set `LOG_RAW_REPLIES 1` at the top of `at_client.cpp` to dump
-the raw JSON replies instead, to eyeball the wire format first.
-
-### M3 gate (for reference)
-
-M3 published a hard-coded `Gesture` over Wi-Fi; with the agent running,
-`ros2 topic echo /gesture/event` showed `gesture 1`, `confidence 0.87`,
-`bbox 0.512/0.430`, `frame_id gesture_camera` at ~1 Hz. That path returns, driven
-by the camera, in M5.
+The monitor also prints `gesture -> N (conf ...)` on each confirmed change.
+`LOG_RAW_REPLIES 1` at the top of `at_client.cpp` dumps raw camera JSON instead,
+for debugging the UART side.
 
 ## ESP-IDF on this Mac (notes)
 

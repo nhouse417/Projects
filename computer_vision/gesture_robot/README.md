@@ -10,8 +10,8 @@ A hand gesture seen by a XIAO Vision AI Camera drives a simulated robot in ROS 2
 | 2 | `gesture_msgs` contract and the Python serial bridge | Done |
 | 3 | C++ behavior node drives turtlesim, with a safety watchdog | Done |
 | 4 | Hand mimic in RViz2, then hand and TurtleBot3 in Gazebo | Done |
-| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | In progress |
-| 6 | Swap the transport, rerun the same tests, benchmark v1 against v2 | Planned |
+| 5 | Firmware v2: ESP-IDF, a custom AT client, micro-ROS over Wi-Fi | Done |
+| 6 | Swap the transport, rerun the same tests, benchmark v1 against v2 | Done |
 
 ## Goals
 

@@ -140,6 +140,22 @@ def test_counts_and_missing_scan(bag):
     assert len(msgs[k2b.TOPIC_TF_STATIC]) == 1
 
 
+def test_ignores_macos_metadata_files(kitti_root, tmp_path):
+    """macOS writes ._<name> AppleDouble files next to real ones on exFAT."""
+    split = kitti_root / "training"
+    junk = b"\x00\x05\x16\x07\x00\x02\x00\x00Mac OS X        "
+    for p in (split / "image_02" / SEQ / "._000000.png",
+              split / "velodyne" / SEQ / "._000000.bin",
+              split / "calib" / f"._{SEQ}.txt",
+              split / "label_02" / f"._{SEQ}.txt"):
+        p.write_bytes(junk)
+
+    assert k2b.frame_ids(split, SEQ) == list(range(N_FRAMES))
+    counts = k2b.convert_sequence(kitti_root, "training", SEQ, tmp_path / "bag")
+    assert counts[k2b.TOPIC_IMAGE] == N_FRAMES
+    assert counts[k2b.TOPIC_POINTS] == N_FRAMES - 1
+
+
 def test_timestamps_identical_across_topics(bag):
     _, msgs = read_all(bag)
     t0 = k2b.DEFAULT_START_TIME_S * 1_000_000_000

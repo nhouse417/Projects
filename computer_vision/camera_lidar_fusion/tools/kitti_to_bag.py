@@ -356,7 +356,10 @@ def make_typestore():
 
 
 def frame_ids(split_dir: Path, seq: str) -> list[int]:
-    return sorted(int(p.stem) for p in (split_dir / "image_02" / seq).glob("*.png"))
+    """Frame numbers from image_02/<seq>/NNNNNN.png. Skips anything else, such
+    as the ._NNNNNN.png metadata files macOS writes on exFAT/FAT drives."""
+    return sorted(int(p.stem) for p in (split_dir / "image_02" / seq).glob("*.png")
+                  if p.stem.isdigit())
 
 
 def convert_sequence(kitti_root: Path, split: str, seq: str, out_path: Path,

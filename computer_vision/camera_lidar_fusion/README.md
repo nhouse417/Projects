@@ -2,7 +2,7 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done. Milestones A1–A5 are next (see [CLAUDE.md](CLAUDE.md)).
+**Status:** environment and KITTI → rosbag2 converter are done. Next: 2D detector (ONNX Runtime), LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 

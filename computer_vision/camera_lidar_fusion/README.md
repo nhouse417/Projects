@@ -2,7 +2,7 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done. Next: 2D detector (ONNX Runtime), LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
+**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. Next: 2D detector (ONNX Runtime), LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 
@@ -46,6 +46,25 @@ data/kitti_tracking/training/
 
 `data/` and `bags/` are gitignored.
 
+### Keeping the data on an external drive
+
+The velodyne zip alone is ~35 GB, so the zips, extracted sequences and bags can all live on a USB drive.
+
+- **Format:** exFAT or APFS. FAT32 can't hold files over 4 GB. On exFAT, macOS writes hidden `._*` files next to real ones; the converter ignores them.
+- **Slow downloads:** KITTI's server limits each connection, so a browser download can take many hours. A multi-connection download is worth trying:
+  ```bash
+  pixi exec -s aria2 aria2c -x 16 -s 16 --file-allocation=none "<download link>"
+  ```
+- **Check a zip is complete** before extracting (it reads only the index at the end of the file):
+  ```bash
+  unzip -l "/Volumes/<drive>/data_tracking_velodyne.zip" | tail -1
+  ```
+- **Point the tools at the drive.** Run `pixi` from this folder, and quote paths that contain spaces:
+  ```bash
+  pixi run kitti-to-bag 0000 0001 0005 0011 --kitti-root "/Volumes/<drive>/kitti_tracking" --out-dir "/Volumes/<drive>/bags"
+  pixi run play "/Volumes/<drive>/bags/kitti_0000"
+  ```
+
 ## KITTI → rosbag2
 
 ```bash
@@ -77,3 +96,12 @@ RViz2 shows the camera image, the point cloud colored by intensity, the TF frame
 ## Notes
 
 - **Step 0 (converter):** tested on a synthetic sequence with real KITTI calibration. Tests cover parsing, timestamps, image/cloud round-trip, GT box placement, `/tf_static` latching, and agreement with the KITTI projection chain. `ros2 bag play` runs at 10 Hz, and `tf2_echo velodyne camera_02` shows the camera 0.27 m ahead of and 7 cm below the LiDAR.
+- **Step 0 on real data:** sequences 0000, 0001, 0005 and 0011 (1,271 frames) convert with every topic's count matching the image count, except that sequence 0001 has no scan for frames 177–180 (443 clouds for 447 images). In RViz2, sequence 0000 shows the image, the cloud in the `velodyne` frame, and GT boxes sitting on the parked cars and the cyclist ahead. A numeric check on 0000 and 0011:
+
+  | Check | 0000 | 0011 |
+  |---|---|---|
+  | GT Car boxes containing LiDAR points | 242 / 243 | 3,255 / 3,405 |
+  | In-box points with `rotation_y` sign flipped | 71% of correct | 55% of correct |
+  | In-box points that project into the image and land inside the labeled 2D box (±3 px) | 100% | 100% |
+
+  In-box points that miss the 2D box all project outside the image. They belong to cars cut off at the image edge, whose labeled 2D box stops at the border. A3 will only see the in-image part of those cars. Inside each box, LiDAR returns cluster on the side facing the sensor, which is the near-surface bias A4 measures against KITTI's box positions.

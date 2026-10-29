@@ -1,0 +1,82 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Background Color: 30; 30; 30
+    Fixed Frame: velodyne
+    Frame Rate: 30
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 10
+      Plane Cell Count: 10
+      Offset: {X: 0, Y: 0, Z: -1.73}
+      Color: 90; 90; 90
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Marker Scale: 1
+      Show Arrows: false
+      Show Names: true
+      Value: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Velodyne
+      Enabled: true
+      Topic:
+        Value: /kitti/velodyne/points
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 5
+      Style: Points
+      Size (Pixels): 2
+      Color Transformer: Intensity
+      Channel Name: intensity
+      Use rainbow: true
+      Autocompute Intensity Bounds: true
+      Decay Time: 0
+      Value: true
+    - Class: vision_msgs_rviz_plugins/Detection3DArray
+      Name: GT objects
+      Enabled: true
+      Alpha: 0.6
+      Line Width: 0.05
+      Only Edge: true
+      Show Score: false
+      Topic:
+        Value: /kitti/gt/objects
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 5
+      Value: true
+    - Class: rviz_default_plugins/Image
+      Name: Camera
+      Enabled: true
+      Topic:
+        Value: /kitti/camera/image_raw
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 5
+      Normalize Range: true
+      Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Target Frame: velodyne
+      Focal Point: {X: 15, Y: 0, Z: 0}
+      Distance: 35
+      Pitch: 0.6
+      Yaw: 3.14
+    Saved: ~
+Window Geometry:
+  Width: 1600
+  Height: 1000

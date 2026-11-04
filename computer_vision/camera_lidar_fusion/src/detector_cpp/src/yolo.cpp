@@ -12,9 +12,58 @@
 
 namespace detector_cpp {
 
-LetterboxInfo letterbox(const cv::Mat& /*bgr*/, int /*input_w*/, int /*input_h*/,
-                        std::vector<float>& /*chw*/) {
-  return {};
+LetterboxInfo letterbox(const cv::Mat& bgr, int input_w, int input_h, std::vector<float>& chw) {
+
+  CV_Assert(!bgr.empty() && bgr.type() == CV_8UC3);
+
+  // get input image size from bgr
+  const int W = bgr.cols;
+  const int H = bgr.rows;
+
+  // compute uniform scale so image isn't stretched
+  const float scale = std::min(static_cast<float>(input_h) / H, static_cast<float>(input_w) / W);
+
+  const int new_w = static_cast<int>(std::round(W*scale));
+  const int new_h = static_cast<int>(std::round(H*scale));
+
+  // resize image using new height and width
+  cv::Mat resized;
+  cv::resize(bgr, resized, cv::Size(new_w, new_h));
+
+  // compute padding 
+  const int pad_x = (input_w - new_w) / 2;
+  const int pad_y = (input_h - new_h) / 2;
+
+  // add padding to resized
+  cv::Mat padded;
+  cv::copyMakeBorder(resized, padded,
+                     pad_y, input_h - new_h - pad_y, 
+                     pad_x, input_w - new_w - pad_x,
+                     cv::BORDER_CONSTANT, cv::Scalar(114, 114, 114));
+
+  // convert colorspace from BGR to RGB
+  cv::cvtColor(padded, padded, cv::COLOR_BGR2RGB);
+
+  // convert image library image from CV_8UC3 to CV_32FC3
+  // and normalize values from [0, 255] to [0, 1]
+  // purpose: so these images are correctly formatted for ML model
+  cv::Mat normalized;
+  padded.convertTo(normalized, CV_32FC3, 1.0 / 255);
+
+  // reorder pixel data from HWC to CHW for the ML model
+  // y = row (vertical position), x = col (horizontal position)
+  const int plane = input_h * input_w;     
+  chw.resize(3 * plane);
+  for (int y = 0; y < input_h; ++y) {
+    for (int x = 0; x < input_w; ++x) {
+      const cv::Vec3f& px = normalized.at<cv::Vec3f>(y, x);
+      for (int c = 0; c < 3; ++c) {
+        chw[c * plane + y * input_w + x] = px[c];
+      }
+    }
+  }
+  
+  return {scale, pad_x, pad_y};
 }
 
 Box unletterbox(const Box& /*b*/, const LetterboxInfo& /*lb*/, int /*image_w*/, int /*image_h*/) {

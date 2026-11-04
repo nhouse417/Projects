@@ -1,0 +1,6 @@
+# Ultralytics 8.4.197 predict, model yolo11n_384x1280.onnx
+# frame 0000/000000 (1242x375), conf 0.25, iou 0.5, classes 0 2
+# class_id score x1 y1 x2 y2 (image pixels)
+0 0.8955 1106.81 176.06 1199.91 318.25
+2 0.8305 295.10 167.78 451.86 286.97
+0 0.7699 779.56 170.37 872.28 363.31

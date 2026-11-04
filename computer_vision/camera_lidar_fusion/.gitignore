@@ -12,12 +12,14 @@ CLAUDE.md
 .pixi/*
 !.pixi/config.toml
 
-# KITTI download and converted bags — large, documented in README
-data/
-bags/
+# KITTI download and converted bags — large, documented in README.
+# Anchored to this folder, so test fixture folders named data/ aren't ignored.
+/data/
+/bags/
 
-# Exported models
+# Exported models and downloaded weights (Ultralytics weights are AGPL-3.0)
 models/*.onnx
+models/*.pt
 
 # colcon
 build/

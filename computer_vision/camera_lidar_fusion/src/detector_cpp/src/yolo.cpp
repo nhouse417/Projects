@@ -66,8 +66,19 @@ LetterboxInfo letterbox(const cv::Mat& bgr, int input_w, int input_h, std::vecto
   return {scale, pad_x, pad_y};
 }
 
-Box unletterbox(const Box& /*b*/, const LetterboxInfo& /*lb*/, int /*image_w*/, int /*image_h*/) {
-  return {};
+Box unletterbox(const Box& b, const LetterboxInfo& lb, int image_w, int image_h) {
+  
+  const float x1 = (b.x1 - lb.pad_x) / lb.scale;
+  const float y1 = (b.y1 - lb.pad_y) / lb.scale;
+  const float x2 = (b.x2 - lb.pad_x) / lb.scale;
+  const float y2 = (b.y2 - lb.pad_y) / lb.scale;
+
+  return {
+    std::clamp(x1, 0.f, static_cast<float>(image_w)),
+    std::clamp(y1, 0.f, static_cast<float>(image_h)),
+    std::clamp(x2, 0.f, static_cast<float>(image_w)),
+    std::clamp(y2, 0.f, static_cast<float>(image_h))
+  };
 }
 
 std::vector<Detection> decode(const float* /*output*/, int /*num_channels*/, int /*num_candidates*/,

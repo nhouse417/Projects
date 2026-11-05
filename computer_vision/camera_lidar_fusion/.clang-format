@@ -1,0 +1,11 @@
+# C++ formatting for src/: Google style (what ROS 2's C++ style is based on)
+# with a 100-column limit. VS Code formats on save; `pixi run format` formats
+# every C++ file in src/.
+BasedOnStyle: Google
+ColumnLimit: 100
+# `const float* output`, never derived from the surrounding code.
+DerivePointerAlignment: false
+PointerAlignment: Left
+# Keep the blank-line groups of #includes (own header, standard library,
+# third party); only sort inside each group.
+IncludeBlocks: Preserve

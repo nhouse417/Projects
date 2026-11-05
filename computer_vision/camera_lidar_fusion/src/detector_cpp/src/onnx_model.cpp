@@ -32,14 +32,16 @@ OnnxModel::OnnxModel(const std::string& path, int intra_op_threads)
   output_name_ = session_.GetOutputNameAllocated(0, allocator).get();
 
   // A dynamic dimension reads as -1, so this also rejects dynamic exports.
-  const std::vector<int64_t> in = session_.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+  const std::vector<int64_t> in =
+      session_.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
   if (in.size() != 4 || in[0] != 1 || in[1] != 3 || in[2] <= 0 || in[3] <= 0) {
     throw std::runtime_error(path + ": expected a static input [1, 3, H, W], got " + shape_str(in));
   }
   input_h_ = static_cast<int>(in[2]);
   input_w_ = static_cast<int>(in[3]);
 
-  const std::vector<int64_t> out = session_.GetOutputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+  const std::vector<int64_t> out =
+      session_.GetOutputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
   if (out.size() != 3 || out[0] != 1 || out[1] <= 4 || out[2] <= 0) {
     throw std::runtime_error(path + ": expected an output [1, 4 + classes, candidates], got " +
                              shape_str(out));
@@ -51,7 +53,8 @@ OnnxModel::OnnxModel(const std::string& path, int intra_op_threads)
 std::string OnnxModel::metadata(const std::string& key) const {
   Ort::AllocatorWithDefaultOptions allocator;
   const Ort::ModelMetadata meta = session_.GetModelMetadata();
-  const Ort::AllocatedStringPtr value = meta.LookupCustomMetadataMapAllocated(key.c_str(), allocator);
+  const Ort::AllocatedStringPtr value =
+      meta.LookupCustomMetadataMapAllocated(key.c_str(), allocator);
   return value ? std::string(value.get()) : std::string();
 }
 

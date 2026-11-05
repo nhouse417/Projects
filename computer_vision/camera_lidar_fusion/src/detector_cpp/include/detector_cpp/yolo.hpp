@@ -12,9 +12,22 @@ namespace detector_cpp {
 constexpr int kCocoPerson = 0;
 constexpr int kCocoCar = 2;
 
-struct Box { float x1, y1, x2, y2; };                      // corner format, pixels
-struct Detection { Box box; float score; int class_id; };  // COCO class id
-struct LetterboxInfo { float scale; int pad_x; int pad_y; };
+// Corner format, in pixels.
+struct Box {
+  float x1, y1, x2, y2;
+};
+
+struct Detection {
+  Box box;
+  float score;
+  int class_id;  // COCO class id
+};
+
+struct LetterboxInfo {
+  float scale;
+  int pad_x;
+  int pad_y;
+};
 
 /*
    Fits a BGR image into the model input without distorting it, then converts
@@ -33,7 +46,8 @@ LetterboxInfo letterbox(const cv::Mat& bgr, int input_w, int input_h, std::vecto
 // [0, image_w] x [0, image_h].
 Box unletterbox(const Box& b, const LetterboxInfo& lb, int image_w, int image_h);
 
-/* Decodes YOLO11's raw output for one image, shape [num_channels, num_candidates]
+/*
+   Decodes YOLO11's raw output for one image, shape [num_channels, num_candidates]
    and channel-major: value c of candidate i is output[c * num_candidates + i].
    Channels 0-3 are the box center and size (cx, cy, w, h) in model-input
    pixels; the rest are class scores, already sigmoided, with no objectness.

@@ -57,7 +57,7 @@ TEST(Letterbox, PadsLeftAndRightWith114) {
       SCOPED_TRACE(testing::Message() << "c=" << c << " y=" << y);
       EXPECT_NEAR(at(chw, 1280, 384, c, 3, y), kPad, kPixelTol);      // last left padding column
       EXPECT_NEAR(at(chw, 1280, 384, c, 4, y), kGray, kPixelTol);     // first image column
-      EXPECT_NEAR(at(chw, 1280, 384, c, 1275, y), kGray, kPixelTol);  // last image column, 4 + 1272 - 1
+      EXPECT_NEAR(at(chw, 1280, 384, c, 1275, y), kGray, kPixelTol);  // last image column: 4+1272-1
       EXPECT_NEAR(at(chw, 1280, 384, c, 1276, y), kPad, kPixelTol);   // first right padding column
     }
   }
@@ -98,7 +98,8 @@ TEST(Letterbox, MatchesOpenCvBlobWhenNoResizeIsNeeded) {
   // HWC->CHW. cv::dnn::blobFromImage does the same conversion on its own.
   cv::Mat bgr(32, 64, CV_8UC3);
   cv::randu(bgr, cv::Scalar::all(0), cv::Scalar::all(256));
-  bgr.at<cv::Vec3b>(10, 20) = cv::Vec3b(10, 20, 30);  // cv::Mat::at takes (row, col): y = 10, x = 20
+  // cv::Mat::at takes (row, col): y = 10, x = 20.
+  bgr.at<cv::Vec3b>(10, 20) = cv::Vec3b(10, 20, 30);
   std::vector<float> chw;
   const LetterboxInfo lb = letterbox(bgr, 64, 32, chw);
   EXPECT_FLOAT_EQ(lb.scale, 1.f);
@@ -123,8 +124,8 @@ TEST(Letterbox, MatchesOpenCvBlobWhenNoResizeIsNeeded) {
 
 // Image pixels -> model-input pixels, the mapping unletterbox() undoes.
 Box to_input(const Box& b, const LetterboxInfo& lb) {
-  return {b.x1 * lb.scale + lb.pad_x, b.y1 * lb.scale + lb.pad_y,
-          b.x2 * lb.scale + lb.pad_x, b.y2 * lb.scale + lb.pad_y};
+  return {b.x1 * lb.scale + lb.pad_x, b.y1 * lb.scale + lb.pad_y, b.x2 * lb.scale + lb.pad_x,
+          b.y2 * lb.scale + lb.pad_y};
 }
 
 void expect_box_near(const Box& actual, const Box& expected, float tol) {
@@ -151,7 +152,8 @@ TEST(Unletterbox, InvertsTheLetterbox) {
 TEST(Unletterbox, ClipsToTheImage) {
   // Starts in the left padding and above the input, ends past both far edges.
   const LetterboxInfo lb{1.024f, 4, 0};
-  expect_box_near(unletterbox({1.f, -5.f, 1279.f, 400.f}, lb, 1242, 375), {0.f, 0.f, 1242.f, 375.f}, 1e-4f);
+  expect_box_near(unletterbox({1.f, -5.f, 1279.f, 400.f}, lb, 1242, 375), {0.f, 0.f, 1242.f, 375.f},
+                  1e-4f);
 }
 
 // ------------------------------------------------------------------- decode
@@ -329,15 +331,13 @@ TEST(Nms, OnlyKeptBoxesSuppress) {
   EXPECT_FLOAT_EQ(kept[1].score, 0.7f);  // C
 }
 
-TEST(Nms, EmptyInEmptyOut) {
-  EXPECT_TRUE(nms({}, 0.5f).empty());
-}
+TEST(Nms, EmptyInEmptyOut) { EXPECT_TRUE(nms({}, 0.5f).empty()); }
 
 TEST(Nms, OutputIsSortedByScore) {
-  const std::vector<Detection> kept = nms({det(0, 0, 10, 10, 0.5f, kCocoCar),
-                                           det(20, 0, 30, 10, 0.9f, kCocoCar),
-                                           det(40, 0, 50, 10, 0.7f, kCocoPerson)},
-                                          0.5f);
+  const std::vector<Detection> kept =
+      nms({det(0, 0, 10, 10, 0.5f, kCocoCar), det(20, 0, 30, 10, 0.9f, kCocoCar),
+           det(40, 0, 50, 10, 0.7f, kCocoPerson)},
+          0.5f);
   ASSERT_EQ(kept.size(), 3u);
   EXPECT_FLOAT_EQ(kept[0].score, 0.9f);
   EXPECT_FLOAT_EQ(kept[1].score, 0.7f);

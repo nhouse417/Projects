@@ -64,8 +64,8 @@ std::vector<Detection> read_fixture(const fs::path& path) {
 // Largest corner difference in pixels. Matching uses this rather than iou()
 // so a bug in iou() can't hide a mismatch.
 float corner_distance(const Box& a, const Box& b) {
-  return std::max({std::abs(a.x1 - b.x1), std::abs(a.y1 - b.y1), std::abs(a.x2 - b.x2),
-                   std::abs(a.y2 - b.y2)});
+  return std::max(
+      {std::abs(a.x1 - b.x1), std::abs(a.y1 - b.y1), std::abs(a.x2 - b.x2), std::abs(a.y2 - b.y2)});
 }
 
 std::string describe(const Detection& d) {
@@ -88,13 +88,16 @@ void expect_all_matched(const std::vector<Detection>& from, const char* from_nam
       }
     }
     if (!nearest) {
-      ADD_FAILURE() << from_name << " box " << describe(f) << " has no " << in_name << " box of that class";
+      ADD_FAILURE() << from_name << " box " << describe(f) << " has no " << in_name
+                    << " box of that class";
       continue;
     }
     EXPECT_LE(corner_distance(nearest->box, f.box), kPixelTolerance)
-        << from_name << " " << describe(f) << " vs nearest " << in_name << " " << describe(*nearest);
+        << from_name << " " << describe(f) << " vs nearest " << in_name << " "
+        << describe(*nearest);
     EXPECT_NEAR(nearest->score, f.score, kScoreTolerance)
-        << from_name << " " << describe(f) << " vs nearest " << in_name << " " << describe(*nearest);
+        << from_name << " " << describe(f) << " vs nearest " << in_name << " "
+        << describe(*nearest);
   }
 }
 
@@ -103,9 +106,10 @@ class Reference : public testing::TestWithParam<std::string> {};
 TEST_P(Reference, MatchesUltralyticsPredict) {
   const std::string frame = GetParam();  // "<seq>/<frame>"
   const fs::path project_root = DETECTOR_CPP_PROJECT_ROOT;
-  const fs::path model_path = env_or("DETECTOR_MODEL", project_root / "models" / "yolo11n_384x1280.onnx");
-  const fs::path image_path =
-      env_or("KITTI_ROOT", project_root / "data" / "kitti_tracking") / "training" / "image_02" / (frame + ".png");
+  const fs::path model_path =
+      env_or("DETECTOR_MODEL", project_root / "models" / "yolo11n_384x1280.onnx");
+  const fs::path image_path = env_or("KITTI_ROOT", project_root / "data" / "kitti_tracking") /
+                              "training" / "image_02" / (frame + ".png");
   std::string fixture_name = "reference_" + frame + ".txt";
   std::replace(fixture_name.begin(), fixture_name.end(), '/', '_');
   const fs::path fixture_path = fs::path(DETECTOR_CPP_TEST_DATA_DIR) / fixture_name;
@@ -136,9 +140,9 @@ TEST_P(Reference, MatchesUltralyticsPredict) {
   const LetterboxInfo lb = letterbox(bgr, model.input_w(), model.input_h(), chw);
   ASSERT_EQ(chw.size(), 3u * model.input_h() * model.input_w());
   const float* output = model.run(chw);
-  std::vector<Detection> actual =
-      nms(decode(output, model.num_channels(), model.num_candidates(), kConfThreshold, kKeepClasses),
-          kIouThreshold);
+  std::vector<Detection> actual = nms(
+      decode(output, model.num_channels(), model.num_candidates(), kConfThreshold, kKeepClasses),
+      kIouThreshold);
   for (Detection& d : actual) d.box = unletterbox(d.box, lb, bgr.cols, bgr.rows);
 
   expect_all_matched(expected, "Ultralytics", actual, "C++");

@@ -11,10 +11,12 @@ pixi install          # ROS 2 Jazzy, OpenCV, Eigen, ONNX Runtime, rosbags
 pixi run build        # colcon build of src/ (Ninja, Release)
 pixi run test         # build, then the C++ tests (gtest)
 pixi run test-tools   # Python tests for tools/
+pixi run format       # clang-format every C++ file in src/
 ```
 
 - **Running the built packages:** `pixi run ws <command>` sources `install/setup.bash` first, e.g. `pixi run ws ros2 launch kitti_bringup kitti.launch.py bag:=bags/kitti_0000`.
 - **Editor IntelliSense:** `pixi run build` also writes `build/compile_commands.json`. clangd finds it on its own; for VS Code's C/C++ extension, set `"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"`.
+- **Formatting:** `.clang-format` is Google style with a 100-column limit (ROS 2's C++ style is based on Google's). To format on save in VS Code, point `"C_Cpp.clang_format_path"` at `.pixi/envs/default/bin/clang-format` and turn on `editor.formatOnSave` for C++.
 - **gtest:** the C++ tests link conda-forge's gtest rather than using `ament_add_gtest()`. The conda compiler puts `$CONDA_PREFIX/include` ahead of every `-isystem`, so `gtest_vendor`'s 1.14 sources would compile against conda-forge's 1.18 headers and fail.
 
 ## Data: KITTI tracking

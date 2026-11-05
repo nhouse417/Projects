@@ -2,7 +2,7 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Next: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
+**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Its C++ pre- and post-processing (letterbox, decode, NMS) is done and matches Ultralytics on real KITTI frames; the ROS node is next. After that: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 
@@ -138,12 +138,14 @@ pixi run export-yolo     # first run downloads yolo11n.pt; writes models/yolo11n
 
 ### Reference check against Ultralytics
 
-`test_reference` runs the C++ pipeline on frame 0 of sequences 0000 and 0016 and compares the boxes with Ultralytics' own predict, within 1 px. The boxes are committed in `src/detector_cpp/test/data/`. KITTI images can't be redistributed, so the test reads the frames from the KITTI folder and skips when the model or the frames are missing (as in CI):
+`test_reference` runs the C++ pipeline on frame 0 of sequences 0000 and 0016 and compares the boxes with Ultralytics' own predict, within 1 px. The boxes are committed in `src/detector_cpp/test/data/`. KITTI images can't be redistributed, so the test reads the frames from `data/kitti_tracking/` (or `KITTI_ROOT`) and skips when the model or the frames are missing (as in CI):
 
 ```bash
-pixi run yolo-reference --kitti-root "/Volumes/<drive>/kitti_tracking"   # writes the fixtures
-KITTI_ROOT="/Volumes/<drive>/kitti_tracking" pixi run test
+pixi run yolo-reference   # writes the fixtures; --kitti-root to read frames from elsewhere
+pixi run test             # or KITTI_ROOT="/Volumes/<drive>/kitti_tracking" pixi run test
 ```
+
+Both frames match, which covers both KITTI image sizes (padding 4 and 5 px left/right). Preprocessing (scale, padding, RGB order, /255, planar layout) and decoding therefore agree with what the model was trained on.
 
 ## Notes
 
@@ -160,3 +162,5 @@ KITTI_ROOT="/Volumes/<drive>/kitti_tracking" pixi run test
   - **Orientation:** the sign-flip check only works on 0000 and 0011. Every car in 0016 is parked at about ±90°, where a flipped sign gives the same box, and pedestrian boxes are nearly square (1.02 × 0.79 m on average).
   - **Pedestrians:** about 5% of in-image points land outside the labeled 2D box, by a median of 10 px (90th percentile 26 px). KITTI gives each pedestrian track one fixed-size 3D box and labels the left/right image boundaries separately, so the 3D box is looser than the 2D one. That makes background bleed a bigger risk for pedestrians in A3.
   - **Near-surface bias:** inside each box, LiDAR returns cluster on the side facing the sensor. A4 measures this offset against KITTI's box positions.
+- **A1, detector library (`detector_cpp`):** letterbox, unletterbox, decode, IoU and NMS in plain C++ with OpenCV, no ROS, so gtest calls them directly. 24 unit tests were written before the code, including the cases that catch common mistakes: reading the output row-major, skipping BGR→RGB, rounding the padding, letting suppressed boxes suppress others, class-agnostic NMS, and filtering classes before picking the best one. The reference check above passes on both frames.
+  - **Known issues, to be measured in A4:** on 0000 frame 0, YOLO returns the cyclist ahead as `person` (0.77), which would become a false Pedestrian, and the white van as `car` (0.83), while KITTI labels it `Van`.

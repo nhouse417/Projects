@@ -77,7 +77,6 @@ Box unletterbox(const Box& b, const LetterboxInfo& lb, int image_w, int image_h)
 
 std::vector<Detection> decode(const float* output, int num_channels, int num_candidates,
                               float conf_threshold, const std::vector<int>& keep_classes) {
-  
   std::vector<Detection> result;
 
   for (int i = 0; i < num_candidates; i++) {
@@ -113,7 +112,23 @@ std::vector<Detection> decode(const float* output, int num_channels, int num_can
   return result;
 }
 
-float iou(const Box& /*a*/, const Box& /*b*/) { return 0.f; }
+float iou(const Box& a, const Box& b) {
+  // 0 is the minimum because a negative width and height would give a false positive overlap
+  const float iw = std::max(0.f, std::min(a.x2, b.x2) - std::max(a.x1, b.x1));
+  const float ih = std::max(0.f, std::min(a.y2, b.y2) - std::max(a.y1, b.y1));
+  const float inter = iw * ih;
+
+  const float area_a = (a.x2 - a.x1) * (a.y2 - a.y1);
+  const float area_b = (b.x2 - b.x1) * (b.y2 - b.y1);
+  const float union_area = area_a + area_b - inter;
+
+  // avoid 0/0 = NaN
+  if (union_area <= 0.f) {
+    return 0.f;
+  }
+
+  return inter / union_area;
+}
 
 std::vector<Detection> nms(std::vector<Detection> /*dets*/, float /*iou_threshold*/) { return {}; }
 

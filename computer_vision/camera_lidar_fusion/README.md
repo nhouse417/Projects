@@ -2,14 +2,22 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. Next: 2D detector (ONNX Runtime), LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
+**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Its C++ pre- and post-processing (letterbox, decode, NMS) is done and matches Ultralytics on real KITTI frames; the ROS node is next. After that: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 
 ```bash
 pixi install          # ROS 2 Jazzy, OpenCV, Eigen, ONNX Runtime, rosbags
-pixi run test-tools   # converter tests
+pixi run build        # colcon build of src/ (Ninja, Release)
+pixi run test         # build, then the C++ tests (gtest)
+pixi run test-tools   # Python tests for tools/
+pixi run format       # clang-format every C++ file in src/
 ```
+
+- **Running the built packages:** `pixi run ws <command>` sources `install/setup.bash` first, e.g. `pixi run ws ros2 launch kitti_bringup kitti.launch.py bag:=bags/kitti_0000`.
+- **Editor IntelliSense:** `pixi run build` also writes `build/compile_commands.json`. clangd finds it on its own; for VS Code's C/C++ extension, set `"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"`.
+- **Formatting:** `.clang-format` is Google style with a 100-column limit (ROS 2's C++ style is based on Google's). To format on save in VS Code, point `"C_Cpp.clang_format_path"` at `.pixi/envs/default/bin/clang-format` and turn on `editor.formatOnSave` for C++.
+- **gtest:** the C++ tests link conda-forge's gtest rather than using `ament_add_gtest()`. The conda compiler puts `$CONDA_PREFIX/include` ahead of every `-isystem`, so `gtest_vendor`'s 1.14 sources would compile against conda-forge's 1.18 headers and fail.
 
 ## Data: KITTI tracking
 
@@ -110,6 +118,35 @@ pixi run play bags/kitti_0000       # terminal 2
 
 RViz2 shows the camera image, the point cloud colored by intensity, the TF frames, and the GT boxes.
 
+After `pixi run build`, one command does both (`rviz:=false` for playback only):
+
+```bash
+pixi run ws ros2 launch kitti_bringup kitti.launch.py bag:=bags/kitti_0000
+```
+
+## Detector model: YOLO11n → ONNX
+
+The detector runs YOLO11n (COCO classes) through ONNX Runtime. Export it once in the separate `export` environment, which has Ultralytics and PyTorch but no ROS. It's macOS-only, and CI doesn't need it.
+
+```bash
+pixi run export-yolo     # first run downloads yolo11n.pt; writes models/yolo11n_384x1280.onnx
+```
+
+- **Input:** a static 1280×384 (W×H). Both sides divide by the largest stride (32), the shape is close to KITTI's 3.3:1, and the scale is about 1 for both KITTI image sizes (1242×375 and 1224×370), so there's no top/bottom padding. The node reads the size from the model, so another size is just a re-export (`--imgsz H W`).
+- **Output:** raw candidates `[1, 84, 10080]` (box center and size, then 80 class scores). The node does the decode and NMS itself.
+- **License:** Ultralytics code and the YOLO11 weights are AGPL-3.0. They're used here for a personal project, and neither is committed (`models/` is gitignored).
+
+### Reference check against Ultralytics
+
+`test_reference` runs the C++ pipeline on frame 0 of sequences 0000 and 0016 and compares the boxes with Ultralytics' own predict, within 1 px. The boxes are committed in `src/detector_cpp/test/data/`. KITTI images can't be redistributed, so the test reads the frames from `data/kitti_tracking/` (or `KITTI_ROOT`) and skips when the model or the frames are missing (as in CI):
+
+```bash
+pixi run yolo-reference   # writes the fixtures; --kitti-root to read frames from elsewhere
+pixi run test             # or KITTI_ROOT="/Volumes/<drive>/kitti_tracking" pixi run test
+```
+
+Both frames match, which covers both KITTI image sizes (padding 4 and 5 px left/right). Preprocessing (scale, padding, RGB order, /255, planar layout) and decoding therefore agree with what the model was trained on.
+
 ## Notes
 
 - **Step 0 (converter):** tested on a synthetic sequence with real KITTI calibration. Tests cover parsing, timestamps, image/cloud round-trip, GT box placement, `/tf_static` latching, and agreement with the KITTI projection chain. `ros2 bag play` runs at 10 Hz, and `tf2_echo velodyne camera_02` shows the camera 0.27 m ahead of and 7 cm below the LiDAR.
@@ -125,3 +162,5 @@ RViz2 shows the camera image, the point cloud colored by intensity, the TF frame
   - **Orientation:** the sign-flip check only works on 0000 and 0011. Every car in 0016 is parked at about ±90°, where a flipped sign gives the same box, and pedestrian boxes are nearly square (1.02 × 0.79 m on average).
   - **Pedestrians:** about 5% of in-image points land outside the labeled 2D box, by a median of 10 px (90th percentile 26 px). KITTI gives each pedestrian track one fixed-size 3D box and labels the left/right image boundaries separately, so the 3D box is looser than the 2D one. That makes background bleed a bigger risk for pedestrians in A3.
   - **Near-surface bias:** inside each box, LiDAR returns cluster on the side facing the sensor. A4 measures this offset against KITTI's box positions.
+- **A1, detector library (`detector_cpp`):** letterbox, unletterbox, decode, IoU and NMS in plain C++ with OpenCV, no ROS, so gtest calls them directly. 24 unit tests were written before the code, including the cases that catch common mistakes: reading the output row-major, skipping BGR→RGB, rounding the padding, letting suppressed boxes suppress others, class-agnostic NMS, and filtering classes before picking the best one. The reference check above passes on both frames.
+  - **Known issues, to be measured in A4:** on 0000 frame 0, YOLO returns the cyclist ahead as `person` (0.77), which would become a false Pedestrian, and the white van as `car` (0.83), while KITTI labels it `Van`.

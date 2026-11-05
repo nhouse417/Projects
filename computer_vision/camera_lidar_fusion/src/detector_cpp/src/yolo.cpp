@@ -5,11 +5,6 @@
 
 #include <opencv2/imgproc.hpp>
 
-// Stubs: they compile and return empty, so the tests start red. Write the
-// bodies in data order: letterbox -> unletterbox -> decode -> iou -> nms.
-// Parameter names are commented out to keep -Wunused-parameter quiet until
-// each body is written.
-
 namespace detector_cpp {
 
 LetterboxInfo letterbox(const cv::Mat& bgr, int input_w, int input_h, std::vector<float>& chw) {
@@ -130,6 +125,26 @@ float iou(const Box& a, const Box& b) {
   return inter / union_area;
 }
 
-std::vector<Detection> nms(std::vector<Detection> /*dets*/, float /*iou_threshold*/) { return {}; }
+std::vector<Detection> nms(std::vector<Detection> dets, float iou_threshold) {
+  std::sort(dets.begin(), dets.end(),
+            [](const Detection& a, const Detection& b) { return a.score > b.score; });
+
+  std::vector<Detection> kept;
+
+  for (const Detection& d : dets) {
+    bool suppressed = false;
+    for (const Detection& k : kept) {
+      if (k.class_id == d.class_id && iou(k.box, d.box) > iou_threshold) {
+        suppressed = true;
+        break;
+      }
+    }
+    if (!suppressed) {
+      kept.push_back(d);
+    }
+  }
+
+  return kept;
+}
 
 }  // namespace detector_cpp

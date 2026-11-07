@@ -14,6 +14,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs dnn)
 find_package(onnxruntime REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(vision_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 # Letterbox, decode, IoU and NMS. OpenCV only, so the tests link it without
 # ROS or ONNX Runtime.
@@ -27,6 +31,28 @@ add_library(onnx_model src/onnx_model.cpp)
 target_include_directories(onnx_model PUBLIC include)
 target_link_libraries(onnx_model PUBLIC onnxruntime::onnxruntime)
 target_compile_features(onnx_model PUBLIC cxx_std_17)
+
+# The ROS node: camera image in, Detection2DArray and an annotated image out.
+add_executable(detector_node src/detector_node.cpp)
+# Link only the C++ typesupport target of each message package. Neither
+# ament_target_dependencies nor ${<pkg>_TARGETS} works on macOS: both pull in
+# the package's rosidl_generator_py library, which needs libpython, and a
+# standalone C++ node then aborts at startup (same fix as gesture_robot).
+target_link_libraries(detector_node
+  yolo
+  onnx_model
+  rclcpp::rclcpp
+  cv_bridge::cv_bridge
+  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
+  vision_msgs::vision_msgs__rosidl_typesupport_cpp)
+# cv_bridge and the message packages still list their Python libraries
+# transitively. Drop dylibs whose symbols the node never uses; the middleware
+# dlopens the real typesupport at runtime, as in the prebuilt RoboStack nodes.
+if(APPLE)
+  target_link_options(detector_node PRIVATE -Wl,-dead_strip_dylibs)
+endif()
+
+install(TARGETS detector_node DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   # Not ament_add_gtest(): it compiles gtest_vendor's 1.14 sources, but the

@@ -1,11 +1,12 @@
 #include <vector>
+#include <string>
 
 #include <cv_bridge/cv_bridge.hpp>
 
 #include "detector_cpp/detector_node.hpp"
 #include "detector_cpp/yolo.hpp"
 
-// Skeleton: it builds and does nothing yet. Build it up step by step:
+// Steps to complete cv pipeline, subscribe and publish detections
 //   1. subscribe to /kitti/camera/image_raw and log the image size
 //   2. run the detector on each image (cv_bridge, OnnxModel, yolo.hpp)
 //   3. publish /detector/detections (vision_msgs/Detection2DArray)
@@ -17,6 +18,9 @@ namespace {
 
 // COCO classes the node keeps: person becomes Pedestrian, car becomes Car.
 const std::vector<int> kKeepClasses{kCocoPerson, kCocoCar};
+
+// returns class_id string needed to fill vision_msgs::msg::ObjectHypothesisWithPose
+std::string kitti_class(int coco_id) { return coco_id == kCocoPerson ? "Pedestrian" : "Car"; }
 
 }  // namespace
 
@@ -30,14 +34,17 @@ DetectorNode::DetectorNode() : rclcpp::Node("detector") {
 
   model_ = std::make_unique<OnnxModel>(model_path);
 
+  detections_pub_ =
+      create_publisher<vision_msgs::msg::Detection2DArray>("/detector/detections", 10);
+
   image_sub_ = create_subscription<sensor_msgs::msg::Image>(
       "/kitti/camera/image_raw", 10,
       [this](const sensor_msgs::msg::Image::ConstSharedPtr& msg) { on_image(msg); });
 }
 
 void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) {
-  // start of cv pipeline
-  // get immutable raw image converted to bgr8 so we can run it through cv pipeline
+  
+  // cv pipeline that converts incoming msg to a Detection 
   const cv::Mat bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
 
   std::vector<float> chw;
@@ -48,6 +55,29 @@ void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) 
   std::vector<Detection> final_dets = nms(conf_dets, iou_threshold_);
   for (Detection& d : final_dets) d.box = unletterbox(d.box, lb, bgr.cols, bgr.rows);
   RCLCPP_INFO(get_logger(), "%zu detections", final_dets.size());
+
+  // publishing every frame, even if there's no boxes, so step A3's exact sync sees each frame
+  vision_msgs::msg::Detection2DArray out;
+  out.header = msg->header;
+
+  for (const Detection& d : final_dets) {
+    vision_msgs::msg::Detection2D det;
+    det.header = msg->header;
+
+    det.bbox.center.position.x = (d.box.x1 + d.box.x2) / 2;
+    det.bbox.center.position.y = (d.box.y1 + d.box.y2) / 2;
+    det.bbox.size_x = d.box.x2 - d.box.x1;
+    det.bbox.size_y = d.box.y2 - d.box.y1;
+
+    vision_msgs::msg::ObjectHypothesisWithPose hyp;
+    hyp.hypothesis.class_id = kitti_class(d.class_id);
+    hyp.hypothesis.score = d.score;
+    det.results.push_back(hyp);
+
+    out.detections.push_back(det);
+  }
+
+  detections_pub_->publish(out);
 }
 
 }  // namespace detector_cpp

@@ -1,7 +1,9 @@
-#include <vector>
+#include <algorithm>
 #include <string>
+#include <vector>
 
 #include <cv_bridge/cv_bridge.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "detector_cpp/detector_node.hpp"
 #include "detector_cpp/yolo.hpp"
@@ -22,6 +24,20 @@ const std::vector<int> kKeepClasses{kCocoPerson, kCocoCar};
 // returns class_id string needed to fill vision_msgs::msg::ObjectHypothesisWithPose
 std::string kitti_class(int coco_id) { return coco_id == kCocoPerson ? "Pedestrian" : "Car"; }
 
+// draws each box and its label on one image
+void draw_detections(cv::Mat& image, const std::vector<Detection>& dets) {
+  for (const Detection& d : dets) {
+    // red color for Pedestrian, green for Car
+    const cv::Scalar color =
+        (d.class_id == kCocoPerson) ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0);
+
+    cv::rectangle(image, cv::Point(d.box.x1, d.box.y1), cv::Point(d.box.x2, d.box.y2), color, 2);
+    cv::putText(image, cv::format("%s %.2f", kitti_class(d.class_id).c_str(), d.score),
+                cv::Point(d.box.x1, std::max(d.box.y1 - 4, 12.f)), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                color, 1);
+  }
+}
+
 }  // namespace
 
 DetectorNode::DetectorNode() : rclcpp::Node("detector") {
@@ -37,14 +53,15 @@ DetectorNode::DetectorNode() : rclcpp::Node("detector") {
   detections_pub_ =
       create_publisher<vision_msgs::msg::Detection2DArray>("/detector/detections", 10);
 
+  annotated_pub_ = create_publisher<sensor_msgs::msg::Image>("/detector/image_annotated", 10);
+
   image_sub_ = create_subscription<sensor_msgs::msg::Image>(
       "/kitti/camera/image_raw", 10,
       [this](const sensor_msgs::msg::Image::ConstSharedPtr& msg) { on_image(msg); });
 }
 
 void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) {
-  
-  // cv pipeline that converts incoming msg to a Detection 
+  // cv pipeline that converts incoming msg to a Detection
   const cv::Mat bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
 
   std::vector<float> chw;
@@ -78,6 +95,11 @@ void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) 
   }
 
   detections_pub_->publish(out);
+
+  // draw on a copy, bgr has the incoming message's pixels
+  cv::Mat annotated = bgr.clone();
+  draw_detections(annotated, final_dets);
+  annotated_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", annotated).toImageMsg());
 }
 
 }  // namespace detector_cpp

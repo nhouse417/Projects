@@ -21,6 +21,7 @@ class DetectorNode : public rclcpp::Node {
   void on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
   rclcpp::Publisher<vision_msgs::msg::Detection2DArray>::SharedPtr detections_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr annotated_pub_;
   float conf_threshold_ = 0.f;
   float iou_threshold_ = 0.f;
   std::unique_ptr<OnnxModel> model_;

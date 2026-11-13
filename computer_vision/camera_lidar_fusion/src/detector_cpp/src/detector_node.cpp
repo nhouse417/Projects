@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -32,10 +33,15 @@ void draw_detections(cv::Mat& image, const std::vector<Detection>& dets) {
         (d.class_id == kCocoPerson) ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0);
 
     cv::rectangle(image, cv::Point(d.box.x1, d.box.y1), cv::Point(d.box.x2, d.box.y2), color, 2);
-    cv::putText(image, cv::format("%s %.2f", kitti_class(d.class_id).c_str(), d.score),
+    cv::putText(image, cv::format("%.2f", d.score),
                 cv::Point(d.box.x1, std::max(d.box.y1 - 4, 12.f)), cv::FONT_HERSHEY_SIMPLEX, 0.5,
                 color, 1);
   }
+}
+
+double ms_between(std::chrono::steady_clock::time_point end,
+                  std::chrono::steady_clock::time_point start) {
+  return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
 }  // namespace
@@ -58,20 +64,32 @@ DetectorNode::DetectorNode() : rclcpp::Node("detector") {
   image_sub_ = create_subscription<sensor_msgs::msg::Image>(
       "/kitti/camera/image_raw", 10,
       [this](const sensor_msgs::msg::Image::ConstSharedPtr& msg) { on_image(msg); });
+
+  log_timer_ = create_wall_timer(std::chrono::seconds(2), [this] { log_latency(); });
 }
 
 void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) {
+  ++frames_;
+
   // cv pipeline that converts incoming msg to a Detection
+  const auto t0 = std::chrono::steady_clock::now();
   const cv::Mat bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
 
   std::vector<float> chw;
   const LetterboxInfo lb = letterbox(bgr, model_->input_w(), model_->input_h(), chw);
+  const auto t1 = std::chrono::steady_clock::now();
+  pre_stats_.add(ms_between(t1, t0));
+
   const float* output = model_->run(chw);
+  const auto t2 = std::chrono::steady_clock::now();
+  infer_stats_.add(ms_between(t2, t1));
+
   std::vector<Detection> conf_dets = decode(
       output, model_->num_channels(), model_->num_candidates(), conf_threshold_, kKeepClasses);
   std::vector<Detection> final_dets = nms(conf_dets, iou_threshold_);
   for (Detection& d : final_dets) d.box = unletterbox(d.box, lb, bgr.cols, bgr.rows);
-  RCLCPP_INFO(get_logger(), "%zu detections", final_dets.size());
+  const auto t3 = std::chrono::steady_clock::now();
+  post_stats_.add(ms_between(t3, t2));
 
   // publishing every frame, even if there's no boxes, so step A3's exact sync sees each frame
   vision_msgs::msg::Detection2DArray out;
@@ -100,6 +118,20 @@ void DetectorNode::on_image(const sensor_msgs::msg::Image::ConstSharedPtr& msg) 
   cv::Mat annotated = bgr.clone();
   draw_detections(annotated, final_dets);
   annotated_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", annotated).toImageMsg());
+}
+
+void DetectorNode::log_latency() {
+  if (pre_stats_.size() == 0) return;
+
+  RCLCPP_INFO(get_logger(),
+              "frames %zu | window %zu | pre %.1f / %.1f | infer %.1f / %.1f | post %.1f / %.1f ms "
+              "(mean/p95)",
+              frames_, pre_stats_.size(), pre_stats_.mean(), pre_stats_.p95(), infer_stats_.mean(),
+              infer_stats_.p95(), post_stats_.mean(), post_stats_.p95());
+
+  pre_stats_.clear();
+  infer_stats_.clear();
+  post_stats_.clear();
 }
 
 }  // namespace detector_cpp

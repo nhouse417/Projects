@@ -32,6 +32,12 @@ target_include_directories(onnx_model PUBLIC include)
 target_link_libraries(onnx_model PUBLIC onnxruntime::onnxruntime)
 target_compile_features(onnx_model PUBLIC cxx_std_17)
 
+# Per-stage latency (mean and p95) for the node's log. Plain C++, so the tests
+# link it without ROS.
+add_library(latency_stats src/latency_stats.cpp)
+target_include_directories(latency_stats PUBLIC include)
+target_compile_features(latency_stats PUBLIC cxx_std_17)
+
 # The ROS node: camera image in, Detection2DArray and an annotated image out.
 add_executable(detector_node src/detector_node.cpp)
 # Link only the C++ typesupport target of each message package. Neither
@@ -41,6 +47,7 @@ add_executable(detector_node src/detector_node.cpp)
 target_link_libraries(detector_node
   yolo
   onnx_model
+  latency_stats
   rclcpp::rclcpp
   cv_bridge::cv_bridge
   sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
@@ -67,6 +74,10 @@ if(BUILD_TESTING)
   add_executable(test_yolo test/test_yolo.cpp)
   target_link_libraries(test_yolo yolo opencv_dnn GTest::gtest_main)
   ament_add_gtest_test(test_yolo)
+
+  add_executable(test_latency_stats test/test_latency_stats.cpp)
+  target_link_libraries(test_latency_stats latency_stats GTest::gtest_main)
+  ament_add_gtest_test(test_latency_stats)
 
   # The whole pipeline against Ultralytics' predict on real KITTI frames. Skips
   # when the model, the frames or the fixtures are missing, as in CI.

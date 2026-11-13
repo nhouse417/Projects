@@ -2,7 +2,7 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Its C++ pre- and post-processing (letterbox, decode, NMS) is done and matches Ultralytics on real KITTI frames; the ROS node is next. After that: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
+**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Its C++ pre- and post-processing (letterbox, decode, NMS) matches Ultralytics on real KITTI frames, and the ROS node keeps up with the bags' 10 Hz at ~23 ms per frame on the CPU. A launch file with RViz is next. After that: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 
@@ -147,6 +147,23 @@ pixi run test             # or KITTI_ROOT="/Volumes/<drive>/kitti_tracking" pixi
 
 Both frames match, which covers both KITTI image sizes (padding 4 and 5 px left/right). Preprocessing (scale, padding, RGB order, /255, planar layout) and decoding therefore agree with what the model was trained on.
 
+## Detector node
+
+`detector_node` runs the pipeline on every camera frame and publishes:
+
+| Topic | Type | Content |
+|---|---|---|
+| `/detector/detections` | `vision_msgs/Detection2DArray` | `Car` / `Pedestrian` with score, box center and size in image pixels |
+| `/detector/image_annotated` | `sensor_msgs/Image` (bgr8) | the frame with boxes drawn: cars green, pedestrians red |
+
+Both copy the image header, so A3 can pair detections with the LiDAR scan by exact timestamp. Frames with no boxes still get an empty array. Parameters: `model_path`, `conf_threshold` (0.25), `iou_threshold` (0.5). Every 2 s the node logs the mean and p95 of each stage (preprocess, inference, postprocess) and the number of frames processed so far.
+
+```bash
+pixi run ws ros2 run detector_cpp detector_node              # terminal 1
+pixi run play bags/kitti_0000                                # terminal 2
+pixi run ws ros2 run rqt_image_view rqt_image_view           # terminal 3: pick /detector/image_annotated
+```
+
 ## Notes
 
 - **Step 0 (converter):** tested on a synthetic sequence with real KITTI calibration. Tests cover parsing, timestamps, image/cloud round-trip, GT box placement, `/tf_static` latching, and agreement with the KITTI projection chain. `ros2 bag play` runs at 10 Hz, and `tf2_echo velodyne camera_02` shows the camera 0.27 m ahead of and 7 cm below the LiDAR.
@@ -164,3 +181,13 @@ Both frames match, which covers both KITTI image sizes (padding 4 and 5 px left/
   - **Near-surface bias:** inside each box, LiDAR returns cluster on the side facing the sensor. A4 measures this offset against KITTI's box positions.
 - **A1, detector library (`detector_cpp`):** letterbox, unletterbox, decode, IoU and NMS in plain C++ with OpenCV, no ROS, so gtest calls them directly. 24 unit tests were written before the code, including the cases that catch common mistakes: reading the output row-major, skipping BGR→RGB, rounding the padding, letting suppressed boxes suppress others, class-agnostic NMS, and filtering classes before picking the best one. The reference check above passes on both frames.
   - **Known issues, to be measured in A4:** on 0000 frame 0, YOLO returns the cyclist ahead as `person` (0.77), which would become a false Pedestrian, and the white van as `car` (0.83), while KITTI labels it `Van`.
+- **A1, detector node:** on sequences 0000 and 0016, frame 0 gives the same 3 and 15 boxes as the reference fixtures, `/detector/detections` holds 9.9 Hz, and every frame is processed (154 and 209, none dropped). Latency per frame on an Apple M4, ONNX Runtime on the CPU:
+
+  | Stage | Mean | p95 |
+  |---|---|---|
+  | Preprocess (cv_bridge + letterbox) | 0.8 ms | 0.8–1.4 ms |
+  | Inference | ~21 ms | 22–26 ms |
+  | Postprocess (decode + NMS + unletterbox) | 0.8 ms | 1.0 ms |
+
+  Inference is about 93% of the ~23 ms frame, well inside the 100 ms between frames. The first 2 s window is slower (one ~70 ms preprocess frame, inference p95 30 ms) while buffers are allocated and ONNX Runtime warms up.
+  - **Known issues, seen in the annotated image:** the cyclist in 0000 comes out as Pedestrian and the van as Car, as above. In 0016, a row of parked bikes gives a `Car` 0.29 false positive.

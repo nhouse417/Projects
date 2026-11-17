@@ -12,10 +12,11 @@ namespace detector_cpp {
 
 class OnnxModel {
  public:
-  // Loads the model for the CPU. intra_op_threads = 0 lets ONNX Runtime pick.
-  // Throws Ort::Exception if the file doesn't load, std::runtime_error if the
-  // shapes aren't the ones above.
-  explicit OnnxModel(const std::string& path, int intra_op_threads = 0);
+  // Loads the model on the CPU, or through Core ML when use_coreml is set (macOS
+  // only; ONNX Runtime throws on other platforms). intra_op_threads = 0 lets ONNX
+  // Runtime pick. Throws Ort::Exception if the file doesn't load,
+  // std::runtime_error if the shapes aren't the ones above.
+  explicit OnnxModel(const std::string& path, bool use_coreml = false, int intra_op_threads = 0);
 
   int input_w() const { return input_w_; }
   int input_h() const { return input_h_; }

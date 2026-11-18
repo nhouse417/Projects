@@ -17,11 +17,15 @@ std::string shape_str(const std::vector<int64_t>& shape) {
 
 }  // namespace
 
-OnnxModel::OnnxModel(const std::string& path, int intra_op_threads)
+OnnxModel::OnnxModel(const std::string& path, bool use_coreml, int intra_op_threads)
     : env_(ORT_LOGGING_LEVEL_WARNING, "detector_cpp") {
   Ort::SessionOptions options;
   options.SetIntraOpNumThreads(intra_op_threads);
   options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+  if (use_coreml) {
+    options.AppendExecutionProvider("CoreML",
+                                    {{"ModelFormat", "MLProgram"}, {"MLComputeUnits", "ALL"}});
+  }
   session_ = Ort::Session(env_, path.c_str(), options);
 
   if (session_.GetInputCount() != 1 || session_.GetOutputCount() != 1) {
@@ -48,6 +52,12 @@ OnnxModel::OnnxModel(const std::string& path, int intra_op_threads)
   }
   num_channels_ = static_cast<int>(out[1]);
   num_candidates_ = static_cast<int>(out[2]);
+
+  // The first run is slow: ONNX Runtime allocates its buffers and Core ML
+  // compiles the model for the GPU (~1.6 s). Do it now, before the node
+  // subscribes, so the first camera frames don't queue up and get dropped.
+  std::vector<float> dummy(3u * input_h_ * input_w_);
+  run(dummy);
 }
 
 std::string OnnxModel::metadata(const std::string& key) const {

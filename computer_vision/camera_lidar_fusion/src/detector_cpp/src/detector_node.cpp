@@ -50,11 +50,14 @@ DetectorNode::DetectorNode() : rclcpp::Node("detector") {
   // ROS2 params don't have a float type so declare double then static_cast<float> to convert
   conf_threshold_ = static_cast<float>(declare_parameter<double>("conf_threshold", 0.25));
   iou_threshold_ = static_cast<float>(declare_parameter<double>("iou_threshold", 0.5));
+  const bool use_coreml = declare_parameter<bool>("use_coreml", false);
 
   const std::string model_path =
       declare_parameter<std::string>("model_path", "models/yolo11n_384x1280.onnx");
 
-  model_ = std::make_unique<OnnxModel>(model_path);
+  model_ = std::make_unique<OnnxModel>(model_path, use_coreml);
+  RCLCPP_INFO(get_logger(), "%s on %s, input %dx%d", model_path.c_str(),
+              use_coreml ? "Core ML" : "CPU", model_->input_w(), model_->input_h());
 
   detections_pub_ =
       create_publisher<vision_msgs::msg::Detection2DArray>("/detector/detections", 10);

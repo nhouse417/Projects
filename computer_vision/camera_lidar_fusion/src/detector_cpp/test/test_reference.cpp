@@ -1,7 +1,9 @@
 // Runs the whole C++ pipeline (letterbox -> ONNX Runtime -> decode -> NMS ->
 // unletterbox) on real KITTI frames and compares the boxes with Ultralytics'
 // own predict, saved by tools/yolo_reference.py. That checks preprocessing
-// and decoding against what the model really expects.
+// and decoding against what the model really expects. Each frame runs on the
+// CPU and, on macOS, through Core ML too, so the faster backend is held to the
+// same 1 px.
 //
 // KITTI images can't be committed, so the frames are read from KITTI_ROOT
 // (default data/kitti_tracking) and the model from DETECTOR_MODEL (default
@@ -17,6 +19,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -101,10 +104,14 @@ void expect_all_matched(const std::vector<Detection>& from, const char* from_nam
   }
 }
 
-class Reference : public testing::TestWithParam<std::string> {};
+// ("<seq>/<frame>", use_coreml)
+class Reference : public testing::TestWithParam<std::tuple<std::string, bool>> {};
 
 TEST_P(Reference, MatchesUltralyticsPredict) {
-  const std::string frame = GetParam();  // "<seq>/<frame>"
+  const auto& [frame, use_coreml] = GetParam();
+#ifndef __APPLE__
+  if (use_coreml) GTEST_SKIP() << "Core ML is macOS only";
+#endif
   const fs::path project_root = DETECTOR_CPP_PROJECT_ROOT;
   const fs::path model_path =
       env_or("DETECTOR_MODEL", project_root / "models" / "yolo11n_384x1280.onnx");
@@ -127,7 +134,7 @@ TEST_P(Reference, MatchesUltralyticsPredict) {
   const std::vector<Detection> expected = read_fixture(fixture_path);
   ASSERT_FALSE(expected.empty()) << fixture_path << " has no boxes";
 
-  OnnxModel model(model_path.string());
+  OnnxModel model(model_path.string(), use_coreml);
   // Ultralytics stores the class names as a Python dict repr.
   const std::string names = model.metadata("names");
   EXPECT_NE(names.find("0: 'person'"), std::string::npos) << names;
@@ -149,12 +156,15 @@ TEST_P(Reference, MatchesUltralyticsPredict) {
   expect_all_matched(actual, "C++", expected, "Ultralytics");
 }
 
-// 0000 is 1242x375 (pad_x 4); 0016 is 1224x370 (pad_x 5).
-INSTANTIATE_TEST_SUITE_P(Kitti, Reference, testing::Values("0000/000000", "0016/000000"),
-                         [](const testing::TestParamInfo<std::string>& info) {
-                           std::string name = "seq" + info.param;
+// 0000 is 1242x375 (pad_x 4); 0016 is 1224x370 (pad_x 5). Each on the CPU and
+// through Core ML.
+INSTANTIATE_TEST_SUITE_P(Kitti, Reference,
+                         testing::Combine(testing::Values("0000/000000", "0016/000000"),
+                                          testing::Bool()),
+                         [](const testing::TestParamInfo<std::tuple<std::string, bool>>& info) {
+                           std::string name = "seq" + std::get<0>(info.param);
                            std::replace(name.begin(), name.end(), '/', '_');
-                           return name;
+                           return name + (std::get<1>(info.param) ? "_CoreML" : "_CPU");
                          });
 
 }  // namespace

@@ -3,7 +3,8 @@
     pixi run ws ros2 launch kitti_bringup kitti.launch.py bag:=bags/kitti_0000
     pixi run ws ros2 launch kitti_bringup kitti.launch.py bag:="/Volumes/Extreme SSD/bags/kitti_0000"
 
-Node launch files include this one for playback and visualization.
+Node launch files include this one for playback and visualization, passing
+their own RViz config with rviz_config:=<path>.
 """
 
 from launch import LaunchDescription
@@ -14,18 +15,26 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     bag = LaunchConfiguration("bag")
     delay = LaunchConfiguration("delay")
     rviz = LaunchConfiguration("rviz")
-    rviz_config = PathJoinSubstitution([FindPackageShare("kitti_bringup"), "rviz", "kitti.rviz"])
+    rviz_config = LaunchConfiguration("rviz_config")
 
     return LaunchDescription([
         DeclareLaunchArgument("bag", description="bag folder, e.g. bags/kitti_0000"),
         DeclareLaunchArgument("delay", default_value="2.0",
                               description="seconds to wait before playback, so subscribers are up"),
         DeclareLaunchArgument("rviz", default_value="true", description="start RViz2"),
-        ExecuteProcess(cmd=["ros2", "bag", "play", bag, "--delay", delay], output="screen"),
+        DeclareLaunchArgument(
+            "rviz_config",
+            default_value=PathJoinSubstitution(
+                [FindPackageShare("kitti_bringup"), "rviz", "kitti.rviz"]),
+            description="RViz2 config file"),
+        # Without --wait-for-all-acked the player exits as soon as it has sent the last
+        # message, and the last 1.4 MB image can be cut off before it's fully delivered.
+        ExecuteProcess(cmd=["ros2", "bag", "play", bag, "--delay", delay,
+                            "--wait-for-all-acked", "2000"], output="screen"),
         Node(package="rviz2", executable="rviz2", arguments=["-d", rviz_config],
              condition=IfCondition(rviz)),
     ])

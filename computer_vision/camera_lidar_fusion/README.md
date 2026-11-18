@@ -2,7 +2,7 @@
 
 A C++ ROS 2 (Jazzy) pipeline that detects objects in the KITTI left color camera, uses the Velodyne LiDAR to estimate each object's 3D position, and evaluates the result against KITTI ground truth. Runs on macOS and Linux with RoboStack + pixi. RViz2 is the visualizer; there's no Gazebo.
 
-**Status:** environment and KITTI → rosbag2 converter are done and verified on real KITTI data. In progress: the 2D detector (YOLO11n through ONNX Runtime C++). Its C++ pre- and post-processing (letterbox, decode, NMS) matches Ultralytics on real KITTI frames, and the ROS node keeps up with the bags' 10 Hz at ~23 ms per frame on the CPU (~17 ms with Core ML). A launch file with RViz is next. After that: LiDAR→image projection check, depth per detection → 3D positions, evaluation, and tests + CI.
+**Status:** done and verified on real KITTI data: the environment, the KITTI → rosbag2 converter, and the 2D detector (YOLO11n through ONNX Runtime C++). The detector's pre- and post-processing matches Ultralytics on real KITTI frames, and the node keeps up with the bags' 10 Hz at ~23 ms per frame on the CPU (~17 ms with Core ML). Next: the LiDAR→image projection check, then depth per detection → 3D positions, evaluation, and tests + CI.
 
 ## Setup
 
@@ -159,6 +159,13 @@ Both frames match, which covers both KITTI image sizes (padding 4 and 5 px left/
 Both copy the image header, so A3 can pair detections with the LiDAR scan by exact timestamp. Frames with no boxes still get an empty array. Parameters: `model_path`, `conf_threshold` (0.25), `iou_threshold` (0.5), `use_coreml` (false; macOS only, add `--ros-args -p use_coreml:=true`). Every 2 s the node logs the mean and p95 of each stage (preprocess, inference, postprocess) and the number of frames processed so far.
 
 ```bash
+pixi run ws ros2 launch kitti_bringup detector.launch.py bag:=bags/kitti_0000
+pixi run ws ros2 launch kitti_bringup detector.launch.py bag:=bags/kitti_0016 use_coreml:=true
+```
+
+`detector.launch.py` starts the node and includes `kitti.launch.py` for playback and RViz2. RViz2 shows the annotated image in its Detections panel, next to the point cloud and the GT boxes. `rviz:=false` plays without RViz2, and `delay:=<seconds>` changes the wait before playback (2 s). To run the pieces by hand instead:
+
+```bash
 pixi run ws ros2 run detector_cpp detector_node              # terminal 1
 pixi run play bags/kitti_0000                                # terminal 2
 pixi run ws ros2 run rqt_image_view rqt_image_view           # terminal 3: pick /detector/image_annotated
@@ -203,3 +210,7 @@ pixi run ws ros2 run rqt_image_view rqt_image_view           # terminal 3: pick 
   - **Inference is 1.7× faster in the node, not the 3–4× a benchmark shows.** Run back to back, the same model takes 19.8 ms on the CPU and 6.0 ms with Core ML. Run once every 100 ms, as the node does, the same benchmark takes 30.0 and 12.9 ms. Between frames the hardware sits idle and macOS lowers its clock speeds (and may move the thread to an efficiency core), so each short burst of work starts on slowed-down hardware. Preprocess and postprocess slow down for the same reason: with CPU inference, ONNX Runtime keeps the cores busy for most of each frame, but with Core ML the CPU is mostly idle. The in-node numbers are the ones that count for a 10 Hz pipeline.
   - **The Neural Engine isn't used.** Limited to CPU and Neural Engine, Core ML runs no faster than on the CPU alone (15.9 ms back to back). The likely reason is that ONNX Runtime gives Core ML a 32-bit float model, while the Neural Engine computes in 16-bit.
   - **Warm-up:** the first run of a new Core ML session took 1.6 s while the model was compiled for the GPU. At 10 Hz the subscription queue (10 messages) would overflow and drop frames, so `OnnxModel` runs once on a dummy input when it loads, before the node subscribes.
+- **A1, launch file and frame count:** with `detector.launch.py ... rviz:=false`, every frame is processed: 154 (0000) and 209 (0016) on the CPU, and 209 (0016) with Core ML. Every full 2 s window holds 20 frames, and `ros2 topic hz /detector/detections` averages 10.0 Hz (0.067–0.133 s between messages).
+  - **Last frame:** `ros2 bag play` exits as soon as it has sent the last message, which can cut off the last 1.4 MB image before it's fully delivered (153 of 154). A longer `delay` doesn't help. The launch file plays with `--wait-for-all-acked 2000`, so the player waits up to 2 s for subscribers to confirm they have everything.
+  - **With RViz2 open, a few frames are lost mid-run** (142 and 151 of 154 in two runs), and the 2 s windows swing between 12 and 27 frames. The node keeps up (its timings barely change), so the loss is in delivering large messages between processes while RViz2 renders the point cloud. The likely cause: Fast DDS's default shared-memory segment is 512 KB, so the 1.4 MB images and 1.9 MB clouds go over local UDP in fragments. That will be fixed in A3, where the fusion node needs every image–cloud pair. Until then the frame counts are measured without RViz2.
+  - **At startup,** RViz2 logs "Error transforming pose from frame 'camera_rect' to frame 'velodyne'" from the GT box display for about 3 s, then draws the boxes.
